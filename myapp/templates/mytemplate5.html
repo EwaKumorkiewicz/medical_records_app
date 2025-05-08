@@ -1,0 +1,22 @@
+<p>Zawartość tabeli</p>
+
+<table>
+    <tr>
+        <th> napis </th>
+        <th> dlugosc </th>
+        <th> liczba </th>
+        <th> kwadrat liczby </th>
+    </tr>
+    {% for obiekt in obiekty %}
+    <tr>
+        <td> {{obiekt.napis}} </td>
+        <td> {{obiekt.length}} </td>
+        <td> {{obiekt.liczba}} </td>
+        <td> {{obiekt.square}} </td>
+    </tr>
+    {% empty %}
+
+    <tr> <td colspan = "4"> Brak danych </td></tr>
+
+    {% endfor %}
+</table>
