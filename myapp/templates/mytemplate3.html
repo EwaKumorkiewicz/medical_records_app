@@ -13,3 +13,7 @@
 <p>Aktualna data: {{ data }}</data></p>
 <p> Użycie filtra upper: {{ napis|upper }}</p>
 
+<form method="POST" action="{% url 'logout' %}">
+  {% csrf_token %}
+  <button type="submit">Logout</button>
+</form>

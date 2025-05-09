@@ -1,7 +1,8 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 from .views import MyClass1
 from .views import MyClass2View
+from .views import signup_view, login_view, logout_view, profile_redirect_view
 
 urlpatterns = [
     path('', views.mypage2, name = 'mypage2'),
@@ -9,5 +10,17 @@ urlpatterns = [
     path('mypage3', views.mypage3, name='mypage3'),
     path('mypage4', MyClass1.as_view(), name='mypage4'),
     path('mypage5', MyClass2View.as_view(), name = 'mypage5'),
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/signup/', signup_view, name = 'signup'),
+    path('accounts/login/', login_view, name = 'login'),
+    path('accounts/logout/', logout_view, name = 'logout'),
+    path('accounts/profile/', profile_redirect_view, name='profile_redirect'),
+    path('home/', views.doctor_home_view, name='home_doctor'),
+    path('home_user/', views.mypage3, name='home_user'), 
+    path('nowy_pacjent/', views.mypage3, name='nowy_pacjent'),
+    path('profil_pacjenta/', views.mypage3, name='profil_pacjenta'),
+
+
+
 ]
 

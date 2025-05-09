@@ -55,7 +55,7 @@ ROOT_URLCONF = 'projekt_paw.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -122,3 +122,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+#user model 
+AUTH_USER_MODEL = 'myapp.CustomUser'
+
+LOGIN_REDIRECT_URL = '/myapp/accounts/profile/'
+LOGOUT_REDIRECT_URL = 'login'

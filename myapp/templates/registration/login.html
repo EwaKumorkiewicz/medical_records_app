@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Strona logowania</h2>
+
+<form method = "post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type = "sumbit">Wejdź</button>
+    <button type = "reset">Wyczyść</button>
+</form>
+
+<p>Nie masz konta? <a href = "{% url 'signup' %}">Rejestracja</a></p>
+
+{% endblock %}
