@@ -19,7 +19,7 @@ class MyClass2(models.Model):
     
 
 
- #modele dla użytkowników, pacjent, lekarz   
+ #modele dla użytkowników, pacjent i lekarz   
     
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
@@ -77,4 +77,75 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.username} ({self.role})"
+
+
+
+##Modele na wizyty i wyniki badań:
+from django.conf import settings
+
+class Wizyty(models.Model):
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='appointments_as_patient',  #tej nazwy używamy do zapytań
+        limit_choices_to={'role': 'patient'}
+
+    )
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='appointments_as_doctor',
+        limit_choices_to={'role': 'doctor'}
+    )
+
+    wizyta_data = models.DateTimeField()
+    photo = models.ImageField(upload_to='wizyty_photos/', blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Appointment on {self.wizyta_data.strftime('%d-%m-%Y %H:%M')} - {self.patient.username} with {self.doctor.username}"
+
+
+
+
+class Badania(models.Model):
+    RESULT_TYPE_CHOICES = [
+        ('HR', 'Heart Rate'),
+        ('BP', 'Blood Pressure'),
+        ('ECG', 'EKG'),
+        ('GLU', 'Glukoza'),
+        ('INNE', 'Inne'),
+    ]
+
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='lab_results_patient',
+        limit_choices_to={'role': 'patient'}
+    )
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,  #gdy usuniemy lekarza, to wyniki zostaną, ale pole lekarz będzie puste
+        null=True,
+        blank=True,
+        related_name='lab_results_doctor',
+        limit_choices_to={'role': 'doctor'}
+    )
+
+    badanie_title = models.CharField(max_length=50)
+    result_type = models.CharField(max_length=10, choices=RESULT_TYPE_CHOICES)
+    badanie_data = models.DateTimeField()
+
+    # For simple numeric results (e.g., HR, BP, GLU)
+    badanie_value = models.CharField(max_length=100, blank=True, null=True)
+
+    # For batch files like ECG results
+    badanie_file = models.FileField(upload_to='lab_results/', blank=True, null=True)
+
+    badanie_notatki = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.result_type} - {self.patient.username} - {self.timestamp.strftime('%d-%m-%Y %H:%M')}"
+
+
 

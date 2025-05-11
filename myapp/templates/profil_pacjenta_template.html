@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>Profil pacjenta {{patient.username}}</h1>
+
+<!-- wizyty -->
+<h2>Wizyty</h2>
+<!-- add tutaj button -> dodaj wizytę -->
+<button type="button" class="btn btn-primary mt-2" onclick="toggleForm('wizyta')">Dodaj wizytę dla pacjenta</button>
+
+
+<div id="dodaj_wizyte" style="display:none;">
+    <hr>
+    <form method="post" enctype="multipart/form-data" class="border rounded p-4 bg-light">
+        {% csrf_token %}
+        {{ form_wizyta.as_p }}
+
+        <div class="d-flex gap-2 mt-2">
+            <button type="submit" name = 'submit_form' class="btn btn-success" value = 'wizyta'>Zapisz wizytę</button>
+            <button type="button" class="btn btn-secondary" onclick="toggleForm()">Anuluj</button>
+        </div>
+    </form>
+    <hr>
+</div>
+
+<script>
+function toggleForm(type) {
+    if (type == 'wizyta'){
+        var form = document.getElementById('dodaj_wizyte');
+        form.style.display = (form.style.display === 'none') ? 'block' : 'none'; }
+    else {
+        var form = document.getElementById('dodaj_badanie');
+        form.style.display = (form.style.display === 'none') ? 'block' : 'none'; }
+
+    }
+
+</script>
+
+
+
+{% if wizyty %}
+    <table border="1" cellspacing="0" cellpadding="8">
+    <thead>
+        <tr>
+            <th>Data</th>
+            <th>Lekarz</th>
+            <th>Zobacz więcej</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for wizyta in wizyty %}
+        <tr>
+            <td>{{ wizyta.wizyta_data }}</td>
+            <td>{{ wizyta.doctor.username }}</td>
+            <td>Tu będzie link do moreinfo (pop-up?)</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p>Nie ma żadnych odbytych wizyt.</p>
+{% endif %}
+
+<hr>
+
+<!-- moje lab_results -->
+<h2>Wyniki</h2>
+<!-- add button -> dodaj nowe wyniki/logi -->
+<button type="button" class="btn btn-primary mt-2" onclick="toggleForm('badanie')">Wprowadź nowe wyniki</button>
+
+<div id="dodaj_badanie" style="display:none;">
+    <hr>
+    <form method="post" enctype="multipart/form-data" class="border rounded p-4 bg-light">
+        {% csrf_token %}
+        {{ form_badanie.as_p }}
+
+        <div class="d-flex gap-2 mt-2">
+            <button type="submit" name = 'submit_form' class="btn btn-success" value = 'badanie'>Zapisz</button>
+            <button type="button" class="btn btn-secondary" onclick="toggleForm('badanie')">Anuluj</button>
+        </div>
+    </form>
+    <hr>
+</div>
+
+
+{% if badania %}
+    <table border="1" cellspacing="0" cellpadding="8">
+    <thead>
+        <tr>
+            <th>Tytuł</th>
+            <th>Data badania</th>
+            <th>Typ badania</th>
+            <th>More info</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for badanie in badania %}
+        <tr>
+            <td>{{ badanie.badanie_title }}</td>
+            <td>{{ badanie.badanie_data }}</td>
+            <td>{{ badanie.result_type }}</td>
+            <td>Tu będzie link do moreinfo (pop-up?)</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p>Nie ma żadnych wyników badań.</p>
+{% endif %}
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const valueInput = document.getElementById("id_badanie_value");
+    const fileInput = document.getElementById("id_badanie_file");
+
+    function toggleInputs() {
+        if (valueInput.value) {
+            fileInput.disabled = true;
+        } else {
+            fileInput.disabled = false;
+        }
+
+        if (fileInput.value) {
+            valueInput.disabled = true;
+        } else {
+            valueInput.disabled = false;
+        }
+    }
+
+    valueInput.addEventListener("input", toggleInputs);
+    fileInput.addEventListener("change", toggleInputs);
+
+    toggleInputs();  // initial check
+});
+</script>
+
+
+{% endblock %}

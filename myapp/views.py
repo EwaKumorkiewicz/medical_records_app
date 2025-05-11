@@ -122,7 +122,7 @@ def doctor_home_view(request):
     search_results = []
 
     if query:
-        # Only show unassigned patients
+        #ci bez lekarza
         search_results = CustomUser.objects.filter(
             role='patient',
             assigned_doctor__isnull=True
@@ -134,15 +134,71 @@ def doctor_home_view(request):
         patient_id = request.POST.get('patient_id')
         patient = get_object_or_404(CustomUser, id=patient_id, role='patient')
 
-        # Assign this patient to the current doctor
+        #przypisanie
         if patient.assigned_doctor is None:
             patient.assigned_doctor = request.user
             patient.save()
 
-    # Show this doctor’s assigned patients
+    #wyświetlanie pacjentów przypisanych do danego id_lekarza
     assigned_patients = CustomUser.objects.filter(assigned_doctor=request.user)
 
     return render(request, 'home_doctor_template.html', {
         'search_results': search_results,
         'assigned_patients': assigned_patients
     })
+
+
+from .models import Wizyty
+from .models import Badania 
+#pacjent_home:
+@login_required
+def patient_home_view(request):
+
+    #wyświetlenie objektów tabeli Wizyty
+    patient = get_object_or_404(CustomUser, patient_id = request.user.id, role='patient')
+    wizyty = Wizyty.objects.filter(patient=patient).order_by('-wizyta_data')    #TODO - zrobić model na wizyty (id lekarz, id pacjent, data, notatki, zdj?)
+
+    badania = Wizyty.objects.filter(patient=patient).order_by('-badanie_data')
+    
+    return render(request, 'home_patient_template.html', {'wizyty': wizyty, 'badania': badania})
+
+
+
+
+from .forms import WizytaForm, BadaniaForm
+@login_required
+def patient_profile(request, pk):   #pk to argument przekazywany przez url
+    #widok dla lekarza który w danej chwili obsługuje tego pacjenta
+    
+    patient = get_object_or_404(CustomUser, id = pk, role = 'patient')
+    wizyty = Wizyty.objects.filter(patient=patient).order_by('-wizyta_data')
+    badania = Badania.objects.filter(patient=patient).order_by('-badanie_data')
+
+    form_wizyta = WizytaForm()
+    form_badanie = BadaniaForm()
+
+
+    if request.method == 'POST':
+        if request.POST.get('submit_form') == 'wizyta':
+            form_wizyta = WizytaForm(request.POST, request.FILES)
+            if form_wizyta.is_valid():
+                wizyta = form_wizyta.save(commit=False)
+                wizyta.patient = patient
+                wizyta.doctor = request.user
+                wizyta.save()
+                return redirect('profil_pacjenta', pk=pk)
+
+        elif request.POST.get('submit_form') == 'badanie':
+            form_badanie = BadaniaForm(request.POST, request.FILES)
+            if form_badanie.is_valid():
+                badanie = form_badanie.save(commit=False)
+                badanie.patient = patient
+                badanie.doctor = request.user
+                badanie.save()
+                return redirect('profil_pacjenta', pk=pk)
+
+    return render(request, 'profil_pacjenta_template.html', {'patient': patient, 'wizyty': wizyty, 'badania': badania, 'form_wizyta': form_wizyta, 'form_badanie': form_badanie })
+
+
+
+

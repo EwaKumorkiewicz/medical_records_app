@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Panel Pacjenta </h1>
+{% if user.is_authenticated %}
+    <h2>Witaj, {{ user.username }}</h2>
+{% else %}
+    <h2>Witaj, gościu!</h2>
+{% endif %}
+
+
+<!-- moje wizyty -->
+<h2>Moje Wizyty</h2>
+{% if wizyty %}
+    <table border="1" cellspacing="0" cellpadding="8">
+    <thead>
+        <tr>
+            <th>Data</th>
+            <th>Lekarz</th>
+            <th>Zobacz więcej</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for wizyta in wizyty %}
+        <tr>
+            <td>{{ wizyta.wizyta_data }}</td>
+            <td>{{ wizyta.doctor.username }}</td>
+            <td>Tu będzie link do moreinfo (pop-up?)</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p>Nie masz żadnych odbytych wizyt.</p>
+{% endif %}
+
+<hr>
+
+<!-- moje lab_results -->
+<h2>Moje Wyniki</h2>
+{% if badania %}
+    <table border="1" cellspacing="0" cellpadding="8">
+    <thead>
+        <tr>
+            <th>Tytuł</th>
+            <th>Data badania</th>
+            <th>Typ badania</th>
+            <th>More info</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for badanie in badania %}
+        <tr>
+            <td>{{ badanie.badanie_title }}</td>
+            <td>{{ badanie.badanie_data }}</td>
+            <td>{{ badanie.result_type }}</td>
+            <td>Tu będzie link do moreinfo (pop-up?)</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p>Nie masz żadnych wyników badań.</p>
+{% endif %}
+
+
+
+{% endblock %}
