@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 
+
 {% block content %}
 
 <h1>Profil pacjenta {{patient.username}}</h1>
@@ -7,7 +8,10 @@
 <!-- wizyty -->
 <h2>Wizyty</h2>
 <!-- add tutaj button -> dodaj wizytę -->
-<button type="button" class="btn btn-primary mt-2" onclick="toggleForm('wizyta')">Dodaj wizytę dla pacjenta</button>
+<button type="button" class="btn btn-primary mt-2 d-flex align-items-center gap-1" style = "margin: 4px 0" onclick="toggleForm('wizyta')">
+    <span class="material-symbols-outlined">
+        library_add
+    </span><span>Dodaj wizytę dla pacjenta</span></button>
 
 
 <div id="dodaj_wizyte" style="display:none;">
@@ -17,8 +21,11 @@
         {{ form_wizyta.as_p }}
 
         <div class="d-flex gap-2 mt-2">
-            <button type="submit" name = 'submit_form' class="btn btn-success" value = 'wizyta'>Zapisz wizytę</button>
-            <button type="button" class="btn btn-secondary" onclick="toggleForm()">Anuluj</button>
+            <button type="submit" name = 'submit_form' class="btn btn-success d-flex align-items-center gap-1" value = 'wizyta'>
+                <span class="material-symbols-outlined">
+                    check_box
+                </span><span>Zapisz wizytę</span></button>
+            <button type="button" class="btn btn-secondary" onclick="toggleForm('wizyta')">Anuluj</button>
         </div>
     </form>
     <hr>
@@ -26,30 +33,39 @@
 
 <script>
 function toggleForm(type) {
-    if (type == 'wizyta'){
-        var form = document.getElementById('dodaj_wizyte');
-        form.style.display = (form.style.display === 'none') ? 'block' : 'none'; }
-    else {
-        var form = document.getElementById('dodaj_badanie');
-        form.style.display = (form.style.display === 'none') ? 'block' : 'none'; }
+    let formularz, form_element;   // definicja zmiennej w JS
 
+    if (type === 'wizyta') {
+        formularz = document.getElementById('dodaj_wizyte');
+        form_element = formularz.querySelector('form');
+    } else {
+        formularz = document.getElementById('dodaj_badanie');
+        form_element = formularz.querySelector('form');
     }
+
+    if (formularz.style.display === 'none') {
+        formularz.style.display = 'block';
+        form_element.reset(); // Clear form inputs when shown again
+    } else {
+        formularz.style.display = 'none';
+    }
+}
 
 </script>
 
 
 
-{% if wizyty %}
-    <table border="1" cellspacing="0" cellpadding="8">
+{% if page_obj_wizyta %}
+    <table border="1" cellspacing="0" cellpadding="8" class = "table">
     <thead>
         <tr>
-            <th>Data</th>
-            <th>Lekarz</th>
-            <th>Zobacz więcej</th>
+            <th class="table-primary">Data</th>
+            <th class="table-primary">Lekarz</th>
+            <th class="table-primary">Zobacz więcej</th>
         </tr>
     </thead>
     <tbody>
-        {% for wizyta in wizyty %}
+        {% for wizyta in page_obj_wizyta %}
         <tr>
             <td>{{ wizyta.wizyta_data }}</td>
             <td>{{ wizyta.doctor.username }}</td>
@@ -58,16 +74,50 @@ function toggleForm(type) {
         {% endfor %}
     </tbody>
 </table>
+
+
+<!-- paginacja -->
+<nav aria-label="paginacja" class="mt-3">
+        <ul class="pagination">
+            {% if page_obj_wizyta.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page_1={{ page_obj_wizyta.previous_page_number }}">&laquo; Poprzednia</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Poprzednia</span></li>
+            {% endif %}
+
+            {% for num in page_obj_wizyta.paginator.page_range %}
+                {% if page_obj_wizyta.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj_wizyta.number|add:'-3' and num < page_obj_wizyta.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page_1={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj_wizyta.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page_1={{ page_obj_wizyta.next_page_number }}">Następna &raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Następna &raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+
 {% else %}
     <p>Nie ma żadnych odbytych wizyt.</p>
 {% endif %}
 
 <hr>
 
-<!-- moje lab_results -->
+<!-- lab_results -->
 <h2>Wyniki</h2>
 <!-- add button -> dodaj nowe wyniki/logi -->
-<button type="button" class="btn btn-primary mt-2" onclick="toggleForm('badanie')">Wprowadź nowe wyniki</button>
+<button type="button" class="btn btn-primary mt-2 d-flex align-items-center gap-1" style = "margin: 4px 0" onclick="toggleForm('badanie')">
+    <span class="material-symbols-outlined">
+        library_add
+    </span><span>Wprowadź nowe wyniki</span></button>
 
 <div id="dodaj_badanie" style="display:none;">
     <hr>
@@ -76,7 +126,10 @@ function toggleForm(type) {
         {{ form_badanie.as_p }}
 
         <div class="d-flex gap-2 mt-2">
-            <button type="submit" name = 'submit_form' class="btn btn-success" value = 'badanie'>Zapisz</button>
+            <button type="submit" name = 'submit_form' class="btn btn-success d-flex align-items-center gap-1" value = 'badanie'>
+                <span class="material-symbols-outlined">
+                    check_box
+                </span><span>Zapisz</span></button>
             <button type="button" class="btn btn-secondary" onclick="toggleForm('badanie')">Anuluj</button>
         </div>
     </form>
@@ -84,34 +137,63 @@ function toggleForm(type) {
 </div>
 
 
-{% if badania %}
-    <table border="1" cellspacing="0" cellpadding="8">
+{% if page_obj_badanie %}
+    <table border="1" cellspacing="0" cellpadding="8" class = "table">
     <thead>
         <tr>
-            <th>Tytuł</th>
-            <th>Data badania</th>
-            <th>Typ badania</th>
-            <th>More info</th>
+            <th class="table-primary">Tytuł</th>
+            <th class="table-primary">Data badania</th>
+            <th class="table-primary">Typ badania</th>
+            <th class="table-primary">More info</th>
         </tr>
     </thead>
     <tbody>
-        {% for badanie in badania %}
+        {% for badanie in page_obj_badanie %}
         <tr>
             <td>{{ badanie.badanie_title }}</td>
             <td>{{ badanie.badanie_data }}</td>
             <td>{{ badanie.result_type }}</td>
-            <td>Tu będzie link do moreinfo (pop-up?)</td>
+            <td >Tu będzie link do moreinfo (pop-up?)</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<nav aria-label="paginacja" class="mt-3">
+        <ul class="pagination">
+            {% if page_obj_badanie.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page_2={{ page_obj_badanie.previous_page_number }}">&laquo; Poprzednia</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Poprzednia</span></li>  <!-- laquo - symbol strzałek-->
+            {% endif %}
+
+            {% for num in page_obj_badanie.paginator.page_range %}
+                {% if page_obj_badanie.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj_badanie.number|add:'-3' and num < page_obj_badanie.number|add:'3' %}   <!-- pokaż tylko linki na +2/-2 strony -->
+                    <li class="page-item"><a class="page-link" href="?page_2={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj_badanie.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page_2={{ page_obj_badanie.next_page_number }}">Następna &raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Następna &raquo;</span></li>
+            {% endif %}
+        </ul>
+</nav>
+
 {% else %}
     <p>Nie ma żadnych wyników badań.</p>
 {% endif %}
 
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadzonych wartości w formularzach
     const valueInput = document.getElementById("id_badanie_value");
     const fileInput = document.getElementById("id_badanie_file");
 

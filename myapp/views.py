@@ -164,7 +164,7 @@ def patient_home_view(request):
 
 
 
-
+from django.core.paginator import Paginator
 from .forms import WizytaForm, BadaniaForm
 @login_required
 def patient_profile(request, pk):   #pk to argument przekazywany przez url
@@ -173,6 +173,15 @@ def patient_profile(request, pk):   #pk to argument przekazywany przez url
     patient = get_object_or_404(CustomUser, id = pk, role = 'patient')
     wizyty = Wizyty.objects.filter(patient=patient).order_by('-wizyta_data')
     badania = Badania.objects.filter(patient=patient).order_by('-badanie_data')
+
+    paginator_wizyta = Paginator(wizyty, 5)
+    paginator_badanie = Paginator(badania, 5)
+
+    page_nr_wizyta = request.GET.get('page_1')
+    page_obj_wizyta = paginator_wizyta.get_page(page_nr_wizyta)
+
+    page_nr_badanie = request.GET.get('page_2')
+    page_obj_badanie = paginator_badanie.get_page(page_nr_badanie)
 
     form_wizyta = WizytaForm()
     form_badanie = BadaniaForm()
@@ -197,7 +206,9 @@ def patient_profile(request, pk):   #pk to argument przekazywany przez url
                 badanie.save()
                 return redirect('profil_pacjenta', pk=pk)
 
-    return render(request, 'profil_pacjenta_template.html', {'patient': patient, 'wizyty': wizyty, 'badania': badania, 'form_wizyta': form_wizyta, 'form_badanie': form_badanie })
+    return render(request, 'profil_pacjenta_template.html', {'patient': patient, 'wizyty': wizyty, 'badania': badania, 
+                                                             'form_wizyta': form_wizyta, 'form_badanie': form_badanie, 
+                                                              'page_obj_wizyta': page_obj_wizyta, 'page_obj_badanie': page_obj_badanie})
 
 
 
