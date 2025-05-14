@@ -155,15 +155,15 @@ from .models import Badania
 def patient_home_view(request):
 
     #wyświetlenie objektów tabeli Wizyty
-    patient = get_object_or_404(CustomUser, patient_id = request.user.id, role='patient')
+    patient = get_object_or_404(CustomUser, id = request.user.id, role='patient')
     wizyty = Wizyty.objects.filter(patient=patient).order_by('-wizyta_data')    #TODO - zrobić model na wizyty (id lekarz, id pacjent, data, notatki, zdj?)
 
-    badania = Wizyty.objects.filter(patient=patient).order_by('-badanie_data')
+    badania = Badania.objects.filter(patient=patient).order_by('-badanie_data')
     
     return render(request, 'home_patient_template.html', {'wizyty': wizyty, 'badania': badania})
 
 
-
+import json
 from django.core.paginator import Paginator
 from .forms import WizytaForm, BadaniaForm
 @login_required
@@ -185,6 +185,31 @@ def patient_profile(request, pk):   #pk to argument przekazywany przez url
 
     form_wizyta = WizytaForm()
     form_badanie = BadaniaForm()
+
+
+    for b in badania:
+        if b.badanie_file and not b.badanie_value:
+            try:
+                #read the file as a list of floats
+                with open(b.badanie_file.path, 'r') as f:
+                    values = [float(line.strip()) for line in f if line.strip()]
+                
+                #generate labels for x
+                labels = list(range(1, len(values) + 1))
+
+                b.chart_data = json.dumps({
+                    "labels": labels,
+                    "datasets": [{
+                        "label": "Wyniki",
+                        "data": values,
+                        "borderColor": "rgb(75, 192, 192)",
+                        "tension": 0.1,
+                        "fill": False
+                    }]
+                })
+            except Exception as e:
+                print(f"Błąd odczytu pliku pomiaru: {e}")
+                b.chart_data = json.dumps()
 
 
     if request.method == 'POST':

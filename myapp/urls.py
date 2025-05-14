@@ -4,6 +4,7 @@ from .views import MyClass1
 from .views import MyClass2View
 from .views import signup_view, login_view, logout_view, profile_redirect_view
 
+
 urlpatterns = [
     path('', views.mypage2, name = 'mypage2'),
     path('mysubdir1/', views.mysubdir1, name='mysubdir1'),
@@ -22,5 +23,6 @@ urlpatterns = [
 
 
 
-]
+] 
+
 

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'myapp',
     'bootstrap5',
+    'chartjs',
 ]
 
 MIDDLEWARE = [
@@ -130,3 +131,11 @@ AUTH_USER_MODEL = 'myapp.CustomUser'
 
 LOGIN_REDIRECT_URL = '/myapp/accounts/profile/'
 LOGOUT_REDIRECT_URL = 'login'
+
+
+
+#przesyłanie obrazków, dodać mediaurl
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

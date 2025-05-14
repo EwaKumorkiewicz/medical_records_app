@@ -12,20 +12,22 @@
 <!-- moje wizyty -->
 <h2>Moje Wizyty</h2>
 {% if wizyty %}
-    <table border="1" cellspacing="0" cellpadding="8">
+    <table border="1" cellspacing="0" cellpadding="8" class = "table table-hover">
     <thead>
-        <tr>
-            <th>Data</th>
-            <th>Lekarz</th>
-            <th>Zobacz więcej</th>
+        <tr class = 'text-center'>
+            <th class = 'table-primary'>Data i godzina wizyty</th>
+            <th class = 'table-primary'>Lekarz</th>
+            <th class = 'table-primary'>Zobacz więcej</th>
         </tr>
     </thead>
     <tbody>
         {% for wizyta in wizyty %}
-        <tr>
-            <td>{{ wizyta.wizyta_data }}</td>
+        <tr class = 'text-center'>
+            <td><span>{{ wizyta.wizyta_data|date:"d-m-Y H:i" }}</span></td>
             <td>{{ wizyta.doctor.username }}</td>
-            <td>Tu będzie link do moreinfo (pop-up?)</td>
+            <td><button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#modal_wizyta_{{ wizyta.id }}">
+                        Szczegóły
+                </button></td>
         </tr>
         {% endfor %}
     </tbody>
@@ -39,22 +41,24 @@
 <!-- moje lab_results -->
 <h2>Moje Wyniki</h2>
 {% if badania %}
-    <table border="1" cellspacing="0" cellpadding="8">
+    <table border="1" cellspacing="0" cellpadding="8" class = 'table table-hover' >
     <thead>
-        <tr>
-            <th>Tytuł</th>
-            <th>Data badania</th>
-            <th>Typ badania</th>
-            <th>More info</th>
+        <tr class = 'text-center'>
+            <th class = 'table-primary'>Tytuł</th>
+            <th class = 'table-primary'>Data i godzina badania</th>
+            <th class = 'table-primary'>Typ badania</th>
+            <th class = 'table-primary'>More info</th>
         </tr>
     </thead>
     <tbody>
         {% for badanie in badania %}
-        <tr>
+        <tr class = 'text-center'>
             <td>{{ badanie.badanie_title }}</td>
-            <td>{{ badanie.badanie_data }}</td>
+            <td><span>{{ badanie.badanie_data|date:"d-m-Y H:i" }}</span></td>
             <td>{{ badanie.result_type }}</td>
-            <td>Tu będzie link do moreinfo (pop-up?)</td>
+            <td><button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#modal_badanie_{{ badanie.id }}">
+                        Szczegóły
+                </button></td>
         </tr>
         {% endfor %}
     </tbody>
@@ -63,6 +67,98 @@
     <p>Nie masz żadnych wyników badań.</p>
 {% endif %}
 
+
+<!-- Modal -->
+{% for badanie in badania %}
+  <div class="modal fade" id="modal_badanie_{{ badanie.id }}" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Szczegóły badania</h4>
+        </div>
+        <div class="modal-body">
+          <p>Badanie: {{badanie.badanie_title}} <br>
+            Typ badania: {{badanie.result_type}} <br>
+            <span>Data badania: {{ badanie.badanie_data|date:"d-m-Y H:i" }}</span><br></p>
+            <p>
+            {% if badanie.badanie_value %}
+                Wynik badania: {{ badanie.badanie_value}} <br>
+            {% else %}
+                <canvas id="badanie_chart_{{ badanie.id }}" style="width:100%;max-width:700px"></canvas>
+                <script>
+                    const chartData_ =  badanie.chart_data|safe ;
+                    new Chart(
+                        document.getElementById("badanie_chart_{{ badanie.id }}"),
+                        {
+                            type: "line",
+                            data: chartData_,
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {display: true, position: 'top'}},
+                                scales: {
+                                    x: {title: {
+                                            display: true, text: "Czas (np. próbka)"}},
+                                    y: {title: {
+                                            display: true,text: "Wartość"}}}
+                            }
+                        }
+                    );
+                </script>
+
+            {% endif %}
+            </p>
+            <hr>
+            <p>
+            Notatki: {{badanie.badanie_notatki}}<br>
+            </p>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+{% endfor %}
+
+
+{% for wizyta in wizyty %}
+  <!-- Modal wizyta -->
+  <div class="modal fade" id="modal_wizyta_{{ wizyta.id }}" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Szczegóły wizyty</h4>
+        </div>
+        <div class="modal-body">
+          <p><span>Data wizyty: {{ wizyta.wizyta_data|date:"d-m-Y H:i" }}</span><br>
+            Lekarz: {{ wizyta.doctor.username }} <br>
+            {% if wizyta.photo %}
+                <img src="{{ wizyta.photo.url }}" alt="Zdjęcie z wizyty" class="modal-img" style='height: 100%; width: 100%; object-fit: contain'>
+            {% endif %}
+            <br>
+            <hr>
+            Notatki: {{wizyta.notes}} <br>
+            
+        
+        
+        </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+{% endfor %}
 
 
 {% endblock %}
