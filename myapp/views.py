@@ -187,31 +187,6 @@ def patient_profile(request, pk):   #pk to argument przekazywany przez url
     form_badanie = BadaniaForm()
 
 
-    for b in badania:
-        if b.badanie_file and not b.badanie_value:
-            try:
-                #read the file as a list of floats
-                with open(b.badanie_file.path, 'r') as f:
-                    values = [float(line.strip()) for line in f if line.strip()]
-                
-                #generate labels for x
-                labels = list(range(1, len(values) + 1))
-
-                b.chart_data = json.dumps({
-                    "labels": labels,
-                    "datasets": [{
-                        "label": "Wyniki",
-                        "data": values,
-                        "borderColor": "rgb(75, 192, 192)",
-                        "tension": 0.1,
-                        "fill": False
-                    }]
-                })
-            except Exception as e:
-                print(f"Błąd odczytu pliku pomiaru: {e}")
-                b.chart_data = json.dumps()
-
-
     if request.method == 'POST':
         if request.POST.get('submit_form') == 'wizyta':
             form_wizyta = WizytaForm(request.POST, request.FILES)
@@ -238,3 +213,71 @@ def patient_profile(request, pk):   #pk to argument przekazywany przez url
 
 
 
+"""
+    for b in badania:
+        if b.badanie_file and not b.badanie_value:
+            try:
+                #read the file as a list of floats
+                with open(b.badanie_file.path, 'r') as f:
+                    values = [float(line.strip()) for line in f if line.strip()]
+                
+                #generate labels for x
+                labels = list(range(1, len(values) + 1))
+
+                b.chart_data = json.dumps({
+                    "labels": labels,
+                    "datasets": [{
+                        "label": "Wyniki",
+                        "data": values,
+                        "borderColor": "rgb(75, 192, 192)",
+                        "tension": 0.1,
+                        "fill": False
+                    }]
+                })
+            except Exception as e:
+                print(f"Błąd odczytu pliku pomiaru: {e}")
+                b.chart_data = json.dumps()
+"""
+
+from django.http import JsonResponse
+
+#tu wyświetlanie chart i wartości osobno
+def chart_data(request, badanie_id):
+    try:
+        # Get the Badanie object
+        badanie = Badania.objects.get(id = badanie_id)
+
+        # If the Badanie has a file, read it
+        if badanie.badanie_file:
+            file_path = badanie.badanie_file.path  # Get the file path
+            
+            # Read numbers from the text file
+            with open(file_path, 'r') as file:
+                # Read each line as a number and create a list of integers
+                data = [float(line.strip()) for line in file.readlines() if line.strip().isdigit()]
+            
+            # Prepare the response data
+            chart_data = {
+                'type': 'chart',
+                'labels': [f'{i}' for i in range(len(data))],  
+                'values': data
+            }
+
+        elif badanie.badanie_value:
+            # If there's no file, but a value is present
+            chart_data = {
+                'type': 'value',
+                'value': badanie.badanie_value
+            }
+        
+        else:
+            # If there's neither file nor value, return an error
+            chart_data = {
+                'type': 'error',
+                'message': 'No data available'
+            }
+
+        return JsonResponse(chart_data)
+    
+    except Badania.DoesNotExist:
+        return JsonResponse({'type': 'error', 'message': 'Badanie not found'}, status=404)

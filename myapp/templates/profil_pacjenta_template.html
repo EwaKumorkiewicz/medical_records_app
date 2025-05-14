@@ -155,9 +155,9 @@ function toggleForm(type) {
             <td>{{ badanie.badanie_title }}</td>
             <td>{{ badanie.badanie_data }}</td>
             <td>{{ badanie.result_type }}</td>
-            <td ><button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#modal_badanie_{{ badanie.id }}">
+            <td ><button class="btn btn-info btn-sm show-chart" data-id="{{ badanie.id }}" data-bs-toggle="modal" data-bs-target="#modal_badanie_{{ badanie.id }}">
                         Szczegóły
-                </button></td>
+                    </button></td>
         </tr>
         {% endfor %}
     </tbody>
@@ -226,59 +226,40 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
 
 <!-- Modal -->
 {% for badanie in page_obj_badanie %}
-  <div class="modal fade" id="modal_badanie_{{ badanie.id }}" role="dialog">
+  <div class="modal fade" id="modal_badanie_{{ badanie.id }}" tabindex="-1" role="dialog" aria-labelledby="modal_badanie_{{ badanie.id }}Label" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-    
-      <!-- Modal content-->
+      <!-- Modal content -->
       <div class="modal-content">
         <div class="modal-header">
           <h4 class="modal-title">Szczegóły badania</h4>
         </div>
         <div class="modal-body">
-          <p>Badanie: {{badanie.badanie_title}} <br>
-            Typ badania: {{badanie.result_type}} <br>
-            <span>Data badania: {{ badanie.badanie_data|date:"d-m-Y H:i" }}</span><br></p>
-            <p>
-            {% if badanie.badanie_value %}
-                Wynik badania: {{ badanie.badanie_value}} <br>
-            {% else %}
-                <canvas id="badanie_chart_{{ badanie.id }}" style="width:100%;max-width:700px"></canvas>
-                <script>
-                    const chartData_ =  badanie.chart_data|safe ;
-                    new Chart(
-                        document.getElementById("badanie_chart_{{ badanie.id }}"),
-                        {
-                            type: "line",
-                            data: chartData_,
-                            options: {
-                                responsive: true,
-                                plugins: {
-                                    legend: {display: true, position: 'top'}},
-                                scales: {
-                                    x: {title: {
-                                            display: true, text: "Czas (np. próbka)"}},
-                                    y: {title: {
-                                            display: true,text: "Wartość"}}}
-                            }
-                        }
-                    );
-                </script>
-                {{chartData_}}
+          <p>
+            Badanie: {{ badanie.badanie_title }} <br>
+            Typ badania: {{ badanie.result_type }} <br>
+            <span>Data badania: {{ badanie.badanie_data|date:"d-m-Y H:i" }}</span><br>
+          </p>
+          <p>
+            <!-- Chart container -->
+                <div id="chart-container-{{ badanie.id }}" style="display: none;">
+                <canvas id="badanieChart_{{ badanie.id }}"></canvas>
+                </div>
 
+                <!-- Value container -->
+                <div id="value-container-{{ badanie.id }}" style="display: none;">
+                <p id="value-text-{{ badanie.id }}"></p>
+                </div>
 
-            {% endif %}
-            </p>
-            <hr>
-            <p>
-            Notatki: {{badanie.badanie_notatki}}<br>
-            </p>
-
+          </p>
+          <hr>
+          <p>
+            Notatki:<br> {{ badanie.badanie_notatki }}<br>
+          </p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
         </div>
       </div>
-      
     </div>
   </div>
 {% endfor %}
@@ -302,7 +283,7 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
             {% endif %}
             <br>
             <hr>
-            Notatki: {{wizyta.notes}} <br>
+            Notatki:<br> {{wizyta.notes}} <br>
             
         
         
@@ -317,6 +298,72 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
   </div>
 
 {% endfor %}
+
+<script>
+document.querySelectorAll('.show-chart').forEach(button => {
+    button.addEventListener('click', function () {
+        const id = this.getAttribute('data-id');
+
+        fetch(`/myapp/chart-data/${id}/`)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                const chartContainer = document.getElementById(`chart-container-${id}`);
+                const valueContainer = document.getElementById(`value-container-${id}`);
+                const valueText = document.getElementById(`value-text-${id}`);
+                const canvas = document.getElementById(`badanieChart_${id}`);
+
+                if (!canvas || !chartContainer || !valueContainer || !valueText) {
+                    console.error("DOM elements missing for badanie ID:", id);
+                    return;
+                }
+
+                // Destroy existing chart if present
+                if (window.badanieChart) {
+                    window.badanieChart.destroy();
+                }
+
+                if (data.type === 'chart') {
+                    chartContainer.style.display = 'block';
+                    valueContainer.style.display = 'none';
+
+                    const ctx = canvas.getContext('2d');
+
+                    window.badanieChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                label: 'Pomiar',
+                                data: data.values,
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true
+                        }
+                    });
+                } else if (data.type === 'value') {
+                    chartContainer.style.display = 'none';
+                    valueContainer.style.display = 'block';
+                    valueText.innerText = `Wynik: ${data.value}`;
+                } else {
+                    chartContainer.style.display = 'none';
+                    valueContainer.style.display = 'block';
+                    valueText.innerText = 'Brak danych.';
+                }
+            })
+            .catch(error => {
+                console.error('An error occurred while fetching chart data:', error);
+                alert('An error occurred while fetching chart data.');
+            });
+    });
+});
+</script>
+
 
 
 
