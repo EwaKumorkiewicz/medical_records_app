@@ -26,6 +26,10 @@ class CustomUserCreationForm(UserCreationForm):
 
     )
 
+    pesel = forms.CharField(
+        widget=forms.TextInput(attrs= {'class': 'form-control'}),
+        label = "Numer PESEL/id (3-cyfrowy)")
+
     password1 = forms.CharField(
         label="Hasło",
         help_text="Wprowadź bezpieczne hasło: \n " \
@@ -43,7 +47,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'date_of_birth', 'role', 'password1', 'password2')
+        fields = ('username', 'email', 'date_of_birth', 'pesel', 'role', 'password1', 'password2')
 
 
 from .models import Wizyty

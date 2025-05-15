@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 
+
 {% block content %}
 <h1>Panel Pacjenta </h1>
 {% if user.is_authenticated %}
@@ -9,7 +10,7 @@
 {% endif %}
 
 
-<!-- moje wizyty -->
+<!-- moje wizyty tablica
 <h2>Moje Wizyty</h2>
 {% if wizyty %}
     <table border="1" cellspacing="0" cellpadding="8" class = "table table-hover">
@@ -37,10 +38,84 @@
 {% else %}
     <p>Nie masz żadnych odbytych wizyt.</p>
 {% endif %}
-
+-->
 <hr>
 
-<!-- moje lab_results -->
+{% load tz %}
+<!-- carousel -->
+<h2>Moje wizyty</h2>
+{% if wizyty %}
+<div class="d-flex justify-content-center align-items-center">
+<div id="wizytyCarousel" class="carousel slide m" data-bs-ride="carousel" style = "width: min-content; align-items: center;">
+  <div class="carousel-inner">
+    {% with current_time=now %}
+    {% for wizyta in wizyty %}
+    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+      <div class = 'card' style = "border-color: rgb(0, 142, 198); border-radius: 8px; border-width: 2px;">
+
+      <div class="card-body d-flex flex-column justify-content-between" style="width: 40rem; height: 240px;">   <!-- mx auto - centruje horyzontalnie, -->
+
+        <div class="card-body d-column align-items-center">
+          {% if wizyta.wizyta_data > current_time %}
+          <h5 class="card-title text-success" style = 'font-size:larger; align-items: center; display: flex; gap: 1px;'> <b><u>Wizyta zaplanowana </u></b>
+          
+            {% if wizyta.photo %}
+                    <span class = 'material-symbols-outlined text-success'>
+                    image</span>
+                {% endif %}
+            {% if wizyta.notes%}
+                    <span class = 'material-symbols-outlined text-success'>
+                    description</span>
+                {% endif %}
+          </h5>
+          {% else %}    <!-- zmień tytuł jak jest wizyta przeszła/przyszła -->
+            <h5 class="card-title" style = 'font-size:larger; align-items: center; display: flex; gap: 1px; '> <b>Karta wizyty </b>
+          
+            {% if wizyta.photo %}
+                    <span class = 'material-symbols-outlined'>
+                    image</span>
+                {% endif %}
+            {% if wizyta.notes%}
+                    <span class = 'material-symbols-outlined'>
+                    description</span>
+                {% endif %}
+          </h5>
+          {% endif %}
+          <h6 class="card-subtitle mb-2 text-muted"><b>Data wizyty:   <br></b> {{ wizyta.wizyta_data|date:"d-m-Y H:i" }}</h6>
+          <p class="card-text"><b>Lekarz:   </b> {{ wizyta.doctor.username }}</p><hr>
+          
+        </div>
+          <div class="d-flex flex-row-reverse bd-highlight">
+                
+              <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modal_wizyta_{{ wizyta.id }}">
+              <span class="material-symbols-outlined">info</span> Szczegóły</button>
+              
+          </div>
+
+       
+      </div>
+    </div>
+    </div>
+    {% endfor %}
+    {% endwith %}
+  </div>
+  </div>
+
+  <!-- Carousel Controls -->
+  <button class="carousel-control-prev d-flex align-items-center justify-content-center" type="button" data-bs-target="#wizytyCarousel" data-bs-slide="prev">
+    <span class="material-symbols-outlined" aria-hidden="true" style = "color: rgba(196, 196, 196, 0.863); font-size: 48px;">keyboard_double_arrow_left</span>
+    <span class="sr-only">Poprzedni</span>
+  </button>
+  <button class="carousel-control-next d-flex align-items-center justify-content-center" type="button" data-bs-target="#wizytyCarousel" data-bs-slide="next">
+    <span class="material-symbols-outlined" aria-hidden="true" style = "color: rgba(196, 196, 196, 0.863); font-size: 48px;">keyboard_double_arrow_right</span>
+    <span class="sr-only">Następny</span>
+  </button>
+</div>
+{% else %}
+<p>Nie masz żadnych wyników badań.</p>
+{% endif %}
+
+
 <h2>Moje Wyniki</h2>
 {% if badania %}
     <table border="1" cellspacing="0" cellpadding="8" class = 'table table-hover' >
@@ -49,7 +124,7 @@
             <th class = 'table-primary'>Tytuł</th>
             <th class = 'table-primary'>Data i godzina badania</th>
             <th class = 'table-primary'>Typ badania</th>
-            <th class = 'table-primary'>More info</th>
+            <th class = 'table-primary'>Zobacz więcej</th>
         </tr>
     </thead>
     <tbody>
@@ -75,7 +150,7 @@
 <!-- Modal -->
 {% for badanie in badania %}
   <div class="modal fade" id="modal_badanie_{{ badanie.id }}" tabindex="-1" role="dialog" aria-labelledby="modal_badanie_{{ badanie.id }}Label" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered" style = 'width: max-content; min-width: 40%;'>
       <!-- Modal content -->
       <div class="modal-content">
         <div class="modal-header">

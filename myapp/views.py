@@ -119,16 +119,26 @@ def doctor_home_view(request):
         return redirect('home_user')
 
     query = request.GET.get('q')
+    query_1 = request.GET.get('q_1')
     search_results = []
 
-    if query:
-        #ci bez lekarza
-        search_results = CustomUser.objects.filter(
-            role='patient',
-            assigned_doctor__isnull=True
-        ).filter(
-            Q(username__icontains=query) | Q(email__icontains=query)
-        )
+    if query or query_1:
+        if query:
+            #ci bez lekarza 
+            search_results = CustomUser.objects.filter(
+                role='patient',
+                assigned_doctor__isnull=True
+            ).filter(
+                Q(username__icontains=query) | Q(email__icontains=query)
+            )
+        else:
+            search_results = CustomUser.objects.filter(
+                    role='patient',
+                    assigned_doctor__isnull=True
+                ).filter(
+                    Q(pesel__icontains=query_1)
+                )
+            
 
     if request.method == 'POST':
         patient_id = request.POST.get('patient_id')
@@ -150,6 +160,7 @@ def doctor_home_view(request):
 
 from .models import Wizyty
 from .models import Badania 
+from django.utils import timezone
 #pacjent_home:
 @login_required
 def patient_home_view(request):
@@ -159,8 +170,9 @@ def patient_home_view(request):
     wizyty = Wizyty.objects.filter(patient=patient).order_by('-wizyta_data')    #TODO - zrobić model na wizyty (id lekarz, id pacjent, data, notatki, zdj?)
 
     badania = Badania.objects.filter(patient=patient).order_by('-badanie_data')
+    now = timezone.now()
     
-    return render(request, 'home_patient_template.html', {'wizyty': wizyty, 'badania': badania})
+    return render(request, 'home_patient_template.html', {'wizyty': wizyty, 'badania': badania, 'now': now})
 
 
 import json

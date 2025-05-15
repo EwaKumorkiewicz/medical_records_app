@@ -23,21 +23,24 @@ class MyClass2(models.Model):
     
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.core.validators import RegexValidator
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, username, date_of_birth, password=None, role=None):
+    def create_user(self, email, username, date_of_birth, pesel, password=None, role=None):
         if not email:
             raise ValueError('Podaj email')
         if not username:
             raise ValueError('Podaj nazwę użytkownika')
+        if not pesel:
+            raise ValueError('Podaj PESEL')
         email = self.normalize_email(email)
-        user = self.model(email=email, username=username, role=role, date_of_birth=date_of_birth)
+        user = self.model(email=email, username=username, role=role, date_of_birth=date_of_birth, pesel = pesel)
         user.set_password(password)
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, email, username, date_of_birth, password):
-        user = self.create_user(email, username, date_of_birth, password, role='doctor')
+    def create_superuser(self, email, username, pesel, date_of_birth, password):
+        user = self.create_user(email, username, date_of_birth, pesel, password, role='doctor')
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
@@ -52,8 +55,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length = 10, choices = ROLE_CHOICES)
     date_of_birth = models.DateField()
+    pesel = models.CharField(max_length = 3, validators = [RegexValidator(r'^\d{3}$', message='Wprowadź poprawny numer PESEL (3-cyfrowy).')])
 
     #pola z BaseUser które trzeba dodać ręcznie 
     is_active = models.BooleanField(default=True)
