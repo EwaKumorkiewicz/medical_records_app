@@ -244,19 +244,22 @@ from django.http import JsonResponse
 #tu wyświetlanie chart i wartości osobno
 def chart_data(request, badanie_id):
     try:
-        # Get the Badanie object
+
         badanie = Badania.objects.get(id = badanie_id)
 
-        # If the Badanie has a file, read it
         if badanie.badanie_file:
-            file_path = badanie.badanie_file.path  # Get the file path
+            file_path = badanie.badanie_file.path  
             
-            # Read numbers from the text file
+            # Read numbers from the text file (float i int)
             with open(file_path, 'r') as file:
-                # Read each line as a number and create a list of integers
-                data = [float(line.strip()) for line in file.readlines() if line.strip().isdigit()]
+                data = []
+                for line in file:
+                    try:
+                        data.append(float(line.strip()))
+                    except ValueError:
+                        continue
             
-            # Prepare the response data
+            #dane na wykres pod JSON
             chart_data = {
                 'type': 'chart',
                 'labels': [f'{i}' for i in range(len(data))],  
@@ -264,14 +267,14 @@ def chart_data(request, badanie_id):
             }
 
         elif badanie.badanie_value:
-            # If there's no file, but a value is present
+            #wyswietlanie wartości
             chart_data = {
                 'type': 'value',
                 'value': badanie.badanie_value
             }
         
         else:
-            # If there's neither file nor value, return an error
+            #jeśli nic, error
             chart_data = {
                 'type': 'error',
                 'message': 'No data available'
@@ -280,4 +283,4 @@ def chart_data(request, badanie_id):
         return JsonResponse(chart_data)
     
     except Badania.DoesNotExist:
-        return JsonResponse({'type': 'error', 'message': 'Badanie not found'}, status=404)
+        return JsonResponse({'type': 'error', 'message': 'Nie znaleziono danych'}, status=404)

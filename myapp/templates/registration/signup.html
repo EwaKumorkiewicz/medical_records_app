@@ -4,14 +4,51 @@
 
 <h2>Formularz rejestracji</h2>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data" class="form-horizontal border rounded p-4 bg-light">
     {% csrf_token %}
-    {{ form.as_p }}
+    <div class="form-group">
+        {{ form.username.label }}
+        {{ form.username }}
+        {{ form.username.errors }}
+    </div>
 
-    <button type="submit">Wejdź</button>
-    <button type="reset">Wyczyść</button>
+    <div class="form-group">
+        {{ form.email.label }}
+        {{ form.email }}
+        {{ form.email.errors }}
+    </div>
+
+    <div class="form-group">
+        {{ form.date_of_birth.label }}
+        {{ form.date_of_birth }}
+        {{ form.date_of_birth.errors }}
+    </div>
+
+    <div class = "radio">
+        {{ form.role.label }}
+        {{ form.role }}
+        {{ form.role.errors }}
+    </div>
+
+    <div class="form-group">
+        {{ form.password1.label }}
+        {{ form.password1 }}
+        {{ form.password1.errors }}
+    </div>
+
+    <div class="form-group">
+        {{ form.password2.label }}
+        {{ form.password2 }}
+        {{ form.password2.errors }}
+    </div>
+    <br>
+
+    <button type="submit" class = "btn btn-success">Wejdź</button>
+    <button type="reset" class = "btn btn-secondary">Wyczyść</button>
+    <hr>
+    <p>Masz już konto? <a href="{% url 'login' %}">Strona logowania</a>.</p>
 </form>
 
-<p>Masz już konto? <a href="{% url 'login' %}">Strona logowania</a>.</p>
+
 
 {% endblock %}

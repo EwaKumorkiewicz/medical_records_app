@@ -12,14 +12,16 @@ class CustomUserCreationForm(UserCreationForm):
 
     email = forms.EmailField(
         label="Podaj email",
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
     )
 
     username = forms.CharField(
-        label="Imię i Nazwisko"
+        label="Imię i Nazwisko",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
     )
 
     date_of_birth = forms.DateField(
-        widget=forms.DateInput(attrs={'type': 'date'}),
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         label = "Data urodzenia",
 
     )
@@ -31,12 +33,12 @@ class CustomUserCreationForm(UserCreationForm):
         "Hasło musi mieć min. 8 znaków. \n" \
         "Hasło nie może być typowe. \n" \
         "Hasło nie może składać się tylko z cyfr.",
-        widget=forms.PasswordInput
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
 
     password2 = forms.CharField(
         label="Potwierdź hasło",
-        widget=forms.PasswordInput
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
 
     class Meta:

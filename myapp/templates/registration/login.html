@@ -3,14 +3,27 @@
 
 <h2>Strona logowania</h2>
 
-<form method = "post">
+<form method = "post" enctype="multipart/form-data" class="form-horizontal border rounded p-4 bg-light">
     {% csrf_token %}
-    {{ form.as_p }}
 
-    <button type = "sumbit">Wejdź</button>
-    <button type = "reset">Wyczyść</button>
+    <div class="form-group" style="margin: 2px; border-radius: 4px;">
+        <label><b>Wprowadź email</b></label><br>
+        {{ form.username }}
+        {{ form.username.errors }}
+    </div>
+
+    <div class = "form-group" style = "margin: 2px; border-radius: 4px;">
+        <label><b>Wprowadź hasło</b></label><br>
+        {{ form.password }}
+        {{ form.password.errors }}
+    </div>
+    <br>
+    <button type = "submit" class = "btn btn-success">Wejdź</button>
+    <button type = "reset" class = 'btn btn-secondary'>Wyczyść</button>
+    <hr>
+    <p>Nie masz konta? <a href = "{% url 'signup' %}">Rejestracja</a></p>
 </form>
 
-<p>Nie masz konta? <a href = "{% url 'signup' %}">Rejestracja</a></p>
+
 
 {% endblock %}

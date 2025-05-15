@@ -21,8 +21,15 @@
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
-                    
-                        <li class="nav-item">
+                        {% if user.role == 'doctor' %}
+                            <a class="nav-link d-flex align-items-center gap-1" href="{% url 'home_doctor' %}">
+                                <span class="material-symbols-outlined">
+                                    home
+                                </span><span>Strona główna</span>
+                            </a>
+                        
+                        {% endif %}
+                        <li class = "nav-item">
                             <form method="post" action="{% url 'logout' %}" style="display:inline;">   <!-- zawsze post do logout bo potem się psuje!!! -->
                                 {% csrf_token %}
                                 <button type="submit" class="nav-link btn btn-link d-flex align-items-center gap-1" style="padding: 10px; margin: 0; border: none;"> 
@@ -32,9 +39,10 @@
                             </form>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Zaloguj się</a>
-                        </li>
+                        <a class="nav-link d-flex align-items-center gap-1" href="{% url 'login' %}">
+                            <span class="material-symbols-outlined">
+                                        account_circle
+                                    </span><span>Zaloguj się</span></a>
                     {% endif %}
                 </ul>
             </div>
