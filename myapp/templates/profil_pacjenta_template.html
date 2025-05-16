@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load custom_tags %}
 
 
 {% block content %}
@@ -62,6 +63,8 @@ function toggleForm(type) {
             <th class="table-primary">Data</th>
             <th class="table-primary">Lekarz</th>
             <th class="table-primary">Zobacz więcej</th>
+            <th class = "table-primary">Edytuj</th>
+            <th class="table-primary">Usuń</th>
         </tr>
     </thead>
     <tbody>
@@ -69,12 +72,55 @@ function toggleForm(type) {
         <tr class="text-center">
             <td>{{ wizyta.wizyta_data }}</td>
             <td>{{ wizyta.doctor.username }}</td>
-            <td class = "d-flex justify-content-center align-items-center"><button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modal_wizyta_{{ wizyta.id }}">
-                        <span class="material-symbols-outlined">
-                            info
-                        </span>Szczegóły
-                </button></td>
+
+            
+            <td class = "text-center"><button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal"
+                                data-bs-target="#modal_wizyta_{{ wizyta.id }}">
+                <span class="material-symbols-outlined">info</span>
+                     Szczegóły</button></td>
+            
+            <td class = "text-center">
+                <button type="button" class="btn btn-sm d-inline-flex align-items-center gap-1 btn-hover" data-bs-toggle="modal" data-bs-target="#edit_wizyta{{ wizyta.id }}">
+                            <span class="material-symbols-outlined">edit_note</span>
+                                Edytuj</button>
+                            </td>
+
+                    
+            <td><form method="post" action="{% url 'delete_wizyta' wizyta.id %}" onsubmit="return confirm('Czy na pewno chcesz usunąć tę wizytę?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined">delete</span> Usuń
+                </button></form>
+            </td>
         </tr>
+
+<!-- Modal do edycji-->
+<div class="modal fade" id="edit_wizyta{{ wizyta.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    {% if wizyta.id %}
+      <form method="post" action="{% url 'edit_wizyta' wizyta.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Edytuj Wizytę</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+        </div>
+        <div class="modal-body">
+            {% with form=form_edit|get_item:wizyta.id %}
+                {{ form.as_p }}
+            {% endwith %}
+        </div>
+    {% else %}
+        <p>Nie można edytować.</p>
+    {% endif %}
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Zapisz</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
         {% endfor %}
     </tbody>
 </table>
@@ -113,6 +159,9 @@ function toggleForm(type) {
     <p>Nie ma żadnych odbytych wizyt.</p>
 {% endif %}
 
+
+
+
 <hr>
 
 <!-- lab_results -->
@@ -149,19 +198,24 @@ function toggleForm(type) {
             <th class="table-primary">Tytuł</th>
             <th class="table-primary">Data badania</th>
             <th class="table-primary">Typ badania</th>
-            <th class="table-primary">More info</th>
+            <th class="table-primary">Zobacz więcej</th>
+            <th class="table-primary">Usuń</th>
         </tr>
     </thead>
     <tbody>
         {% for badanie in page_obj_badanie %}
-        <tr class="text-center align-items-center">
+        <tr class="text-center align-middle align-items-center">
             <td>{{ badanie.badanie_title }}</td>
             <td>{{ badanie.badanie_data }}</td>
             <td>{{ badanie.result_type }}</td>
-            <td class = "d-flex justify-content-center align-items-center"><button class="btn btn-primary btn-sm show-chart d-flex align-items-center gap-1" data-id="{{ badanie.id }}" data-bs-toggle="modal" data-bs-target="#modal_badanie_{{ badanie.id }}">
+            <td class = "text-center"><button class="btn btn-primary btn-sm show-chart d-inline-flex align-items-center gap-1" data-id="{{ badanie.id }}" data-bs-toggle="modal" data-bs-target="#modal_badanie_{{ badanie.id }}">
                         <span class="material-symbols-outlined">
                             info
                         </span>Szczegóły</button></td>
+            <td class = "text-center"><button class="btn btn-danger btn-sm d-inline-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined">
+                            delete
+                        </span>Usuń</button></td>
         </tr>
         {% endfor %}
     </tbody>

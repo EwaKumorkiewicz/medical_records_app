@@ -21,6 +21,8 @@ urlpatterns = [
     path('nowy_pacjent/', views.mypage3, name='nowy_pacjent'),
     path('profil_pacjenta/<int:pk>/', views.patient_profile, name='profil_pacjenta'),   #przekazać do url z home_doctor
     path('chart-data/<int:badanie_id>/', views.chart_data, name='chart_data'),
+    path('wizyta/<int:pk>/delete/', views.delete_wizyta, name='delete_wizyta'),
+    path('wizyta/<int:pk>/edit/', views.edit_wizyta, name='edit_wizyta'),
 
 
 ] 

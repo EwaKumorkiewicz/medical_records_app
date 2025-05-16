@@ -219,6 +219,8 @@ def patient_profile(request, pk):   #pk to argument przekazywany przez url
     form_wizyta = WizytaForm()
     form_badanie = BadaniaForm()
 
+    form_edit = {w.id: WizytaForm(instance=w) for w in page_obj_wizyta}
+
 
     if request.method == 'POST':
         if request.POST.get('submit_form') == 'wizyta':
@@ -241,7 +243,7 @@ def patient_profile(request, pk):   #pk to argument przekazywany przez url
 
     return render(request, 'profil_pacjenta_template.html', {'patient': patient, 'wizyty': wizyty, 'badania': badania, 
                                                              'form_wizyta': form_wizyta, 'form_badanie': form_badanie, 
-                                                              'page_obj_wizyta': page_obj_wizyta, 'page_obj_badanie': page_obj_badanie})
+                                                              'page_obj_wizyta': page_obj_wizyta, 'page_obj_badanie': page_obj_badanie, 'form_edit': form_edit,})
 
 
 
@@ -317,3 +319,25 @@ def chart_data(request, badanie_id):
     
     except Badania.DoesNotExist:
         return JsonResponse({'type': 'error', 'message': 'Nie znaleziono danych'}, status=404)
+
+
+#usuwanie i edycja obiektów w bazie:
+#wizyty:
+def delete_wizyta(request, pk):
+    wizyta = get_object_or_404(Wizyty, id=pk)
+    if request.method == 'POST':
+        wizyta.delete()
+        return redirect('profil_pacjenta', wizyta.patient.id)  
+    return render(request, 'myapp/confirm_delete.html', {'wizyta': wizyta})
+
+
+def edit_wizyta(request, pk):
+    wizyta = get_object_or_404(Wizyty, id=pk)
+    if request.method == 'POST':
+        form = WizytaForm(request.POST, instance=wizyta)
+        if form.is_valid():
+            form.save()
+            return redirect('profil_pacjenta', wizyta.patient.id)  
+    else:
+        form = WizytaForm(instance=wizyta)
+    return render(request, 'myapp/edit_wizyta_form.html', {'form': form, 'wizyta': wizyta})
