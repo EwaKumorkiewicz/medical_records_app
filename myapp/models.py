@@ -149,7 +149,7 @@ class Badania(models.Model):
     badanie_notatki = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.result_type} - {self.patient.username} - {self.timestamp.strftime('%d-%m-%Y %H:%M')}"
+        return f"{self.result_type} - {self.patient.username} - {self.badanie_data.strftime('%d-%m-%Y %H:%M')}"
 
 
 

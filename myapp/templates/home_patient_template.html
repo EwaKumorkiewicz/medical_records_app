@@ -10,6 +10,7 @@
 {% endif %}
 
 
+
 <!-- moje wizyty tablica
 <h2>Moje Wizyty</h2>
 {% if wizyty %}
@@ -45,7 +46,8 @@
 <!-- carousel -->
 <h2>Moje wizyty</h2>
 {% if wizyty %}
-<div class="d-flex justify-content-center align-items-center">
+<div class="position-relative d-flex justify-content-center align-items-center" style="margin: 5%;">
+<div class="d-flex justify-content-center align-items-center" style = "margin: 5%;">
 <div id="wizytyCarousel" class="carousel slide m" data-bs-ride="carousel" style = "width: min-content; align-items: center;">
   <div class="carousel-inner">
     {% with current_time=now %}
@@ -100,21 +102,99 @@
     {% endwith %}
   </div>
   </div>
+  </div>
 
   <!-- Carousel Controls -->
   <button class="carousel-control-prev d-flex align-items-center justify-content-center" type="button" data-bs-target="#wizytyCarousel" data-bs-slide="prev">
     <span class="material-symbols-outlined" aria-hidden="true" style = "color: rgba(196, 196, 196, 0.863); font-size: 48px;">keyboard_double_arrow_left</span>
-    <span class="sr-only">Poprzedni</span>
+    <span class="hidden">Poprzedni</span>
   </button>
   <button class="carousel-control-next d-flex align-items-center justify-content-center" type="button" data-bs-target="#wizytyCarousel" data-bs-slide="next">
     <span class="material-symbols-outlined" aria-hidden="true" style = "color: rgba(196, 196, 196, 0.863); font-size: 48px;">keyboard_double_arrow_right</span>
-    <span class="sr-only">Następny</span>
+    <span class="hidden">Następny</span>
   </button>
 </div>
 {% else %}
 <p>Nie masz żadnych wyników badań.</p>
 {% endif %}
 
+
+<hr>
+<h2>Badania</h2>
+
+<!-- pole Search -->
+<form id = "searchForm" class = 'form-horizontal border rounded p-4 bg-light' method="get">
+    <h5>Znajdź badanie, wprowadź tytuł wpisu, typ bądź datę: </h5>
+    <label for = 'q'>Tytuł lub typ badania: </label>
+    <input type="text" name="q" id = 'q' placeholder="Wprowadź nazwę lub kod" value="{{ request.GET.q|default_if_none:'' }}" class="form-control" /><br>
+    <label>Data badania: </label>
+    <input type="date" name="q_1" id = 'q_1' value="{{ request.GET.q_1|default_if_none:'' }}" class="form-control" />
+    <button type="submit" class="btn btn-primary mt-2">Szukaj</button>
+</form>
+
+
+
+<!-- Search Results -->
+{% if search_results %}
+    <h2>Wyniki zapytania: </h2>
+    <table class="table table-hover">
+        <thead>
+            <tr class = 'text-center'>
+                <th>Tytuł badania</th>
+                <th>Typ badania</th>
+                <th>Data badania</th>
+                <th>Zobacz więcej</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bad in search_results %}
+                <tr class = 'text-center'>
+                    <td>{{ bad.badanie_title }}</td>
+                    <td>{{ bad.result_type }} </td>
+                    <td>{{ bad.badanie_data }}</td>
+                    <td class = "d-flex justify-content-center align-items-center"><button class="btn btn-primary btn-sm show-chart d-flex align-items-center gap-1" data-id="{{ bad.id }}" data-bs-toggle="modal" data-bs-target="#modal_badanie_{{ bad.id }}">
+                        <span class="material-symbols-outlined">
+                            info
+                        </span>Szczegóły</button></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% elif request.GET.q or request.GET.q_1 %}
+  <p class="text-muted">Brak wyników dla zapytania</p>
+{% endif %}
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadzonych wartości w formularzach
+    const nameInput = document.getElementById("q");
+    const dateInput = document.getElementById("q_1");
+
+    function toggleInputs() {
+        if (nameInput.value) {
+            dateInput.disabled = true;
+        } else {
+            dateInput.disabled = false;
+        }
+
+        if (dateInput.value) {
+            nameInput.disabled = true;
+        } else {
+            nameInput.disabled = false;
+        }
+    }
+
+    nameInput.addEventListener("input", toggleInputs);
+    dateInput.addEventListener("input", toggleInputs);
+
+    toggleInputs();  // initial check
+});
+</script>
+
+
+
+<br>
 
 <h2>Moje Wyniki</h2>
 {% if badania %}

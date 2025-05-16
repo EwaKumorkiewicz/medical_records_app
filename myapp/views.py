@@ -112,6 +112,7 @@ def profile_redirect_view(request):
 from .models import CustomUser
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+
 #lekarz:
 @login_required
 def doctor_home_view(request):
@@ -150,7 +151,7 @@ def doctor_home_view(request):
             patient.save()
 
     #wyświetlanie pacjentów przypisanych do danego id_lekarza
-    assigned_patients = CustomUser.objects.filter(assigned_doctor=request.user)
+    assigned_patients = CustomUser.objects.filter(assigned_doctor=request.user).order_by('username')
 
     return render(request, 'home_doctor_template.html', {
         'search_results': search_results,
@@ -171,8 +172,28 @@ def patient_home_view(request):
 
     badania = Badania.objects.filter(patient=patient).order_by('-badanie_data')
     now = timezone.now()
+
+    query = request.GET.get('q')
+    query_1 = request.GET.get('q_1')
+    search_results = []
+
+    if query or query_1:
+        if query:
+            search_results = Badania.objects.filter(
+                patient = patient
+            ).filter(                
+                Q(badanie_title__icontains=query) | Q(result_type__icontains = query )
+            )
+        else:
+            search_results = Badania.objects.filter(
+                patient = patient
+            ).filter(                
+                Q(badanie_data__icontains = query_1)
+            )
+
+
     
-    return render(request, 'home_patient_template.html', {'wizyty': wizyty, 'badania': badania, 'now': now})
+    return render(request, 'home_patient_template.html', {'wizyty': wizyty, 'badania': badania, 'now': now, 'search_results': search_results})
 
 
 import json
