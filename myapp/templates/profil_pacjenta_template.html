@@ -6,13 +6,14 @@
 
 <h1>Profil pacjenta {{patient.username}}</h1>
 
+<div class="tab-header" style="display: flex; justify-content: space-between; align-items: center;">
 <!-- wizyty -->
 <h2>Wizyty</h2>
 <!-- tutaj button -> dodaj wizytę -->
 <button type="button" class="btn btn-primary mt-2 d-flex align-items-center gap-1" style = "margin: 4px 0" onclick="toggleForm('wizyta')">
     <span class="material-symbols-outlined">
         library_add
-    </span><span>Dodaj wizytę dla pacjenta</span></button>
+    </span><span>Dodaj wizytę dla pacjenta</span></button></div>
 
 
 <div id="dodaj_wizyte" style="display:none;">
@@ -114,7 +115,7 @@ function toggleForm(type) {
         <p>Nie można edytować.</p>
     {% endif %}
         <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Zapisz</button>
+          <button type="submit" class="btn btn-success d-flex align-items-center gap-1"><span class = "material-symbols-outlined ">check_box</span>Zapisz</button>
         </div>
       </form>
     </div>
@@ -163,7 +164,7 @@ function toggleForm(type) {
 
 
 <hr>
-
+<div class="tab-header" style="display: flex; justify-content: space-between; align-items: center;">
 <!-- lab_results -->
 <h2>Wyniki</h2>
 <!-- add button -> dodaj nowe wyniki/logi -->
@@ -171,6 +172,7 @@ function toggleForm(type) {
     <span class="material-symbols-outlined">
         library_add
     </span><span>Wprowadź nowe wyniki</span></button>
+</div>
 
     
 <div id="dodaj_badanie" style="display:none;">
@@ -212,10 +214,11 @@ function toggleForm(type) {
                         <span class="material-symbols-outlined">
                             info
                         </span>Szczegóły</button></td>
-            <td class = "text-center"><button class="btn btn-danger btn-sm d-inline-flex align-items-center gap-1">
-                        <span class="material-symbols-outlined">
-                            delete
-                        </span>Usuń</button></td>
+            <td><form method="post" action="{% url 'delete_badanie' badanie.id %}" onsubmit="return confirm('Czy na pewno chcesz usunąć to badanie?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined">delete</span> Usuń
+                </button></form></td>
         </tr>
         {% endfor %}
     </tbody>
@@ -280,9 +283,9 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
 });
 </script>
 
+<!-- MODALE -->
 
-
-<!-- Modal -->
+<!-- Modal badanie -->
 {% for badanie in page_obj_badanie %}
   <div class="modal fade" id="modal_badanie_{{ badanie.id }}" tabindex="-1" role="dialog" aria-labelledby="modal_badanie_{{ badanie.id }}Label" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -315,16 +318,17 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
           </p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+            <button type="button" class = "btn btn-primary" id = "gen_raport" data-id = "{{ badanie.id }}">Generuj raport</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
         </div>
       </div>
     </div>
   </div>
 {% endfor %}
 
-
+<!-- Modal wizyta -->
 {% for wizyta in page_obj_wizyta %}
-  <!-- Modal wizyta -->
+
   <div class="modal fade" id="modal_wizyta_{{ wizyta.id }}" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
     
@@ -348,7 +352,9 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
         </p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+            <button type="button" class = "btn btn-primary">Generuj raport</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+          
         </div>
       </div>
       
@@ -374,7 +380,7 @@ document.querySelectorAll('.show-chart').forEach(button => {
                 const canvas = document.getElementById(`badanieChart_${id}`);
 
                 if (!canvas || !chartContainer || !valueContainer || !valueText) {
-                    console.error("DOM elements missing for badanie ID:", id);
+                    console.error("DOM elements missing for badanie:", id);
                     return;
                 }
 
@@ -432,6 +438,75 @@ document.querySelectorAll('.show-chart').forEach(button => {
 </script>
 
 
+<!-- generowanie raportów: wysyłanie requesta -->
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+    //wszystkie buttons tego typu
+    const reportButtons = document.querySelectorAll('.btn.btn-primary[data-id]');
+
+    // Attach the event listener to each button
+    reportButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        const badanieId = this.getAttribute('data-id');  // Get the `data-id`
+        gen_Raport(badanieId);
+      });
+    });
+});
+
+function gen_Raport(badanieId) {
+    const badanieTitle = document.querySelector(`#modal_badanie_${badanieId} .modal-body .badanie-title`).textContent;
+    const resultType = document.querySelector(`#modal_badanie_${badanieId} .modal-body .result-type`).textContent;
+    const badanieData = document.querySelector(`#modal_badanie_${badanieId} .modal-body .badanie-data`).textContent;
+    const notes = document.querySelector(`#modal_badanie_${badanieId} .modal-body .badanie-notatki`).textContent;
+
+    let chartImage = null;          //na początek ustwione na puste 
+    let badanieValue = null;
+
+    const chartContainer = document.getElementById(`chart-container-${badanieId}`);
+    if (chartContainer && chartContainer.style.display !== 'none') {
+        const canvas = document.getElementById(`badanieChart_${badanieId}`);
+        chartImage = canvas.toDataURL(); // image as base64 string
+    }
+
+    const valueContainer = document.getElementById(`value-container-${badanieId}`);
+    if (valueContainer && valueContainer.style.display !== 'none') {
+        const valueElement = document.getElementById(`value-text-${badanieId}`);
+        if (valueElement) {
+            badanieValue = valueElement.textContent || valueElement.innerText; //zależy co dostępne 
+        }
+    }
+
+    // Send data to the server via AJAX - Asynchroniczny JavaScript i XML, do przesyłania bez odświeżania str
+    fetch('generate_report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()   //dla bezpieczestwa
+        },
+        body: JSON.stringify({
+            badanie_id: badanieId,
+            badanie_title: badanieTitle,
+            result_type: resultType,
+            badanie_data: badanieData,
+            notes: notes,
+            chart_image: chartImage,
+            badanie_value: badanieValue
+        })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        //create link to trigger the download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `raport_${badanie_title}.pdf`;
+        link.click();
+    })
+    .catch(error => {
+        console.error('Wystąpił błąd podczas tworzenia raportu: ', error);
+    });
+}
+</script>
 
 
 {% endblock %}

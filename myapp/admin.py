@@ -3,7 +3,7 @@ from django.contrib import admin
 # Register your models here.
 
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser
+from .models import CustomUser, Badania, Wizyty
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
@@ -16,3 +16,7 @@ class CustomUserAdmin(UserAdmin):
     )
 
 admin.site.register(CustomUser, CustomUserAdmin)
+
+
+admin.site.register(Badania)
+admin.site.register(Wizyty)

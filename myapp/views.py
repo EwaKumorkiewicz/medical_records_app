@@ -341,3 +341,64 @@ def edit_wizyta(request, pk):
     else:
         form = WizytaForm(instance=wizyta)
     return render(request, 'myapp/edit_wizyta_form.html', {'form': form, 'wizyta': wizyta})
+
+
+def delete_badanie(request, pk):
+    badanie = get_object_or_404(Badania, id=pk)
+    if request.method == 'POST':
+        badanie.delete()
+        return redirect('profil_pacjenta', badanie.patient.id)  
+    return render(request, 'myapp/confirm_delete.html', {'badanie': badanie})
+
+
+
+
+##generowanie raportów - badania 
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+
+
+def generate_report(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+    
+        badanie_title = data['badanie_title']
+        result_type = data['result_type']
+        badanie_data = data['badanie_data']
+        notes = data['notes']
+        chart_image = data.get('chart_image')
+        badanie_value = data.get('badanie_value')
+
+        #generate PDF Report
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer, pagesize=A4)
+
+        # Draw basic text data
+        p.drawString(100, 750, f'Badanie: {badanie_title}')   #pozycja tekstu współrzędne 
+        p.drawString(100, 735, f'Typ badania: {result_type}')
+        p.drawString(100, 720, f'Data badania: {badanie_data}')
+        p.drawString(100, 705, f'Notatki: {notes}')
+
+
+        if badanie_value:
+            p.drawString(100, 690, f'Wynik badania: {badanie_value}')
+
+        # If the chart image is available
+        if chart_image:
+            from reportlab.lib.utils import ImageReader
+            chart_image_data = BytesIO(chart_image.split(',')[1].encode())  # Convert base64 to image data
+            chart = ImageReader(chart_image_data)
+            p.drawImage(chart, 100, 500, width=400, height=300) 
+
+        p.showPage()
+        p.save()
+
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="raport_{data["badanie_title"]}.pdf"'
+        return response
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)

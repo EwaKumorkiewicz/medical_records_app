@@ -23,6 +23,8 @@ urlpatterns = [
     path('chart-data/<int:badanie_id>/', views.chart_data, name='chart_data'),
     path('wizyta/<int:pk>/delete/', views.delete_wizyta, name='delete_wizyta'),
     path('wizyta/<int:pk>/edit/', views.edit_wizyta, name='edit_wizyta'),
+    path('badanie/<int:pk>/delete/', views.delete_badanie, name='delete_badanie'),
+    path('generate_report/', views.generate_report, name='generate_report'),
 
 
 ] 

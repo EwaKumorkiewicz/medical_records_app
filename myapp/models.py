@@ -26,7 +26,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, username, date_of_birth, pesel, password=None, role=None):
+    def create_user(self, email, username, date_of_birth, pesel, password=None, role=None, **extra_fields):
         if not email:
             raise ValueError('Podaj email')
         if not username:
@@ -34,17 +34,17 @@ class CustomUserManager(BaseUserManager):
         if not pesel:
             raise ValueError('Podaj PESEL')
         email = self.normalize_email(email)
-        user = self.model(email=email, username=username, role=role, date_of_birth=date_of_birth, pesel = pesel)
+        user = self.model(email=email, username=username, role=role, date_of_birth=date_of_birth, pesel = pesel, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, email, username, pesel, date_of_birth, password):
-        user = self.create_user(email, username, date_of_birth, pesel, password, role='doctor')
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(using=self._db)
-        return user
+    def create_superuser(self, email, username, pesel, date_of_birth, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', 'doctor')
+
+        return self.create_user(email, username, date_of_birth, pesel, password, **extra_fields)
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
@@ -75,7 +75,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'date_of_birth', 'role']
+    REQUIRED_FIELDS = ['username', 'date_of_birth', 'role', 'pesel']
 
     objects = CustomUserManager()
 
