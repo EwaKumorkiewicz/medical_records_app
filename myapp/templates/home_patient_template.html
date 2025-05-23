@@ -44,10 +44,10 @@
 
 {% load tz %}
 <!-- carousel -->
-<h2>Moje wizyty</h2>
+<h2><span class = 'material-symbols-outlined'>calendar_month</span>Moje wizyty</h2>
 {% if wizyty %}
 <div class="position-relative d-flex justify-content-center align-items-center" style="margin: 5%;">
-<div class="d-flex justify-content-center align-items-center" style = "margin: 5%;">
+<div class="d-flex justify-content-center align-items-center" style = "margin: 0% 5%;">
 <div id="wizytyCarousel" class="carousel slide m" data-bs-ride="carousel" style = "width: min-content; align-items: center;">
   <div class="carousel-inner">
     {% with current_time=now %}
@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
 
 <br>
 
-<h2>Moje Wyniki</h2>
+<h2><span class = 'material-symbols-outlined'>cardiology</span>Moje Wyniki</h2>
 {% if badania %}
     <table border="1" cellspacing="0" cellpadding="8" class = 'table table-hover' >
     <thead>
@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
           </p>
           <hr>
           <p>
-            Notatki:<br> {{ badanie.badanie_notatki }}<br>
+            Notatki:<br> {{ badanie.badanie_notatki|linebreaksbr }}<br>
           </p>
         </div>
         <div class="modal-footer">
@@ -286,7 +286,7 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
             {% endif %}
             <br>
             <hr>
-            Notatki:<br> {{wizyta.notes}} <br>
+            Notatki:<br> {{wizyta.notes|linebreaksbr}} <br>
             
         
         

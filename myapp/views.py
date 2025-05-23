@@ -334,7 +334,7 @@ def delete_wizyta(request, pk):
 def edit_wizyta(request, pk):
     wizyta = get_object_or_404(Wizyty, id=pk)
     if request.method == 'POST':
-        form = WizytaForm(request.POST, instance=wizyta)
+        form = WizytaForm(request.POST, request.FILES, instance=wizyta)
         if form.is_valid():
             form.save()
             return redirect('profil_pacjenta', wizyta.patient.id)  
@@ -402,3 +402,21 @@ def generate_report(request):
         return response
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+#generacja CSV listy pacjentów danego lekarza
+
+import csv
+
+def generate_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="pacjenci.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Imie i Nazwisko', 'PESEL', 'Data urodzenia'])
+
+    pacjenci = CustomUser.objects.filter(assigned_doctor=request.user).order_by('username')
+    for pacjent in pacjenci:
+        writer.writerow([pacjent.username, pacjent.pesel, pacjent.date_of_birth])
+
+    return response

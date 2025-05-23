@@ -8,7 +8,7 @@
 
 <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center;">
 <!-- wizyty -->
-<h2>Wizyty</h2>
+<h2><span class = 'material-symbols-outlined'>calendar_month</span>Wizyty</h2>
 <!-- tutaj button -> dodaj wizytę -->
 <button type="button" class="btn btn-primary mt-2 d-flex align-items-center gap-1" style = "margin: 4px 0" onclick="toggleForm('wizyta')">
     <span class="material-symbols-outlined">
@@ -47,7 +47,7 @@ function toggleForm(type) {
 
     if (formularz.style.display === 'none') {
         formularz.style.display = 'block';
-        form_element.reset(); // Clear form inputs when shown again
+        form_element.reset(); //wyczyść kiedy włączamy form
     } else {
         formularz.style.display = 'none';
     }
@@ -100,7 +100,7 @@ function toggleForm(type) {
   <div class="modal-dialog">
     <div class="modal-content">
     {% if wizyta.id %}
-      <form method="post" action="{% url 'edit_wizyta' wizyta.id %}">
+      <form method="post" enctype="multipart/form-data" action="{% url 'edit_wizyta' wizyta.id %}">
         {% csrf_token %}
         <div class="modal-header">
           <h5 class="modal-title">Edytuj Wizytę</h5>
@@ -166,7 +166,7 @@ function toggleForm(type) {
 <hr>
 <div class="tab-header" style="display: flex; justify-content: space-between; align-items: center;">
 <!-- lab_results -->
-<h2>Wyniki</h2>
+<h2><span class = 'material-symbols-outlined'>cardiology</span>Wyniki</h2>
 <!-- add button -> dodaj nowe wyniki/logi -->
 <button type="button" class="btn btn-primary mt-2 d-flex align-items-center gap-1" style = "margin: 4px 0" onclick="toggleForm('badanie')">
     <span class="material-symbols-outlined">
@@ -314,7 +314,7 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
           </p>
           <hr>
           <p>
-            Notatki:<br> {{ badanie.badanie_notatki }}<br>
+            Notatki:<br> {{ badanie.badanie_notatki|linebreaksbr }}<br>
           </p>
         </div>
         <div class="modal-footer">
@@ -345,7 +345,7 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
             {% endif %}
             <br>
             <hr>
-            Notatki:<br> {{wizyta.notes}} <br>
+            Notatki:<br> {{wizyta.notes|linebreaksbr}} <br>
             
         
         

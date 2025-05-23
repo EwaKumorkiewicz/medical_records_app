@@ -84,7 +84,20 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
 
 <hr>
 
-<h2>Moi pacjenci</h2>
+
+
+<div class="tab-header" style="display: flex; justify-content: space-between; align-items: center;">
+<!-- lab_results -->
+<h2><span class = "material-symbols-outlined">patient_list</span>Moi pacjenci</h2>
+<!-- add button -> dodaj nowe wyniki/logi -->
+<form method="post" action="{% url 'generate_csv' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary mt-2 d-flex align-items-center gap-1" style = "margin: 4px 0">
+                    <span class="material-symbols-outlined">
+                        download</span>
+                    <span>Pobierz .csv</span></button></form>
+</div>
+
 {% if assigned_patients %}
     <table border="1" cellspacing="0" cellpadding="8" class = 'table table-hover'>
     <thead>

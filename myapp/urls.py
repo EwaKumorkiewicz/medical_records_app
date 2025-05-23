@@ -25,6 +25,7 @@ urlpatterns = [
     path('wizyta/<int:pk>/edit/', views.edit_wizyta, name='edit_wizyta'),
     path('badanie/<int:pk>/delete/', views.delete_badanie, name='delete_badanie'),
     path('generate_report/', views.generate_report, name='generate_report'),
+    path('generate-csv/', views.generate_csv, name='generate_csv'),
 
 
 ] 
