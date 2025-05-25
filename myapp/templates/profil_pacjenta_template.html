@@ -296,9 +296,9 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
         </div>
         <div class="modal-body">
           <p>
-            Badanie: {{ badanie.badanie_title }} <br>
-            Typ badania: {{ badanie.result_type }} <br>
-            <span>Data badania: {{ badanie.badanie_data|date:"d-m-Y H:i" }}</span><br>
+            Badanie: <span class="badanie-title">{{ badanie.badanie_title }}</span><br>     <!-- class żeby mozna było te ele. wyszukac w gen.raport-->
+            Typ badania: <span class="result-type">{{ badanie.result_type }}</span><br>
+            Data badania: <span class="badanie-data">{{ badanie.badanie_data|date:"d-m-Y H:i" }}</span><br>
           </p>
           <p>
             <!-- Chart container -->
@@ -314,11 +314,11 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
           </p>
           <hr>
           <p>
-            Notatki:<br> {{ badanie.badanie_notatki|linebreaksbr }}<br>
+            Notatki:<br><span class="badanie-notatki">{{ badanie.badanie_notatki|linebreaksbr }}</span><br>
           </p>
         </div>
         <div class="modal-footer">
-            <button type="button" class = "btn btn-primary" id = "gen_raport" data-id = "{{ badanie.id }}">Generuj raport</button>
+            <button type="button" class = "btn btn-primary gen_raport" data-id = "{{ badanie.id }}">Generuj raport</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
         </div>
       </div>
@@ -389,6 +389,18 @@ document.querySelectorAll('.show-chart').forEach(button => {
                     window.badanieChart.destroy();
                 }
 
+                const plugin = {
+                    id: 'customCanvasBackgroundColor',
+                    beforeDraw: (chart, args, options) => {
+                        const {ctx} = chart;
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = options.color || '#99ffff';
+                        ctx.fillRect(0, 0, chart.width, chart.height);
+                        ctx.restore();
+                    }
+                };
+
                 if (data.type === 'chart') {
                     chartContainer.style.display = 'block';
                     valueContainer.style.display = 'none';
@@ -416,8 +428,15 @@ document.querySelectorAll('.show-chart').forEach(button => {
                                     ticks: {display: false }},
                             },
                             elements: {
-                                point: {radius: 1}}
-                        }
+                                point: {radius: 1}},
+                            animations: {
+                                onComplete: () => {
+                                    const chartImage = canvas.toDataURL();     //czekaj aż się załaduje do końca
+                                    sendReportData(chartImage);
+                                    }
+                            },    
+                        },
+                        plugins: [plugin],   
                     });
                 } else if (data.type === 'value') {
                     chartContainer.style.display = 'none';
@@ -438,51 +457,86 @@ document.querySelectorAll('.show-chart').forEach(button => {
 </script>
 
 
-<!-- generowanie raportów: wysyłanie requesta -->
+<!-- generowanie raportów BADANIE: wysyłanie requesta -->
 <script>
 
 document.addEventListener("DOMContentLoaded", function () {
-    //wszystkie buttons tego typu
-    const reportButtons = document.querySelectorAll('.btn.btn-primary[data-id]');
+    const reportButtons = document.querySelectorAll('.gen_raport[data-id]');
+    //wybierz wszystkie buttons of this type 
 
-    // Attach the event listener to each button
     reportButtons.forEach(button => {
-      button.addEventListener('click', function () {
-        const badanieId = this.getAttribute('data-id');  // Get the `data-id`
-        gen_Raport(badanieId);
-      });
+        button.addEventListener('click', function () {
+            const modal = this.closest('.modal');    //assoc button with modal (typ modala ma znaczenie)
+            if (!modal) {
+                console.error("Modal not found for button");
+                return;
+            }
+
+            const badanieId = this.getAttribute('data-id');
+            gen_Raport(modal, badanieId);     //przekaż id do gen_raport
+        });
     });
 });
 
-function gen_Raport(badanieId) {
-    const badanieTitle = document.querySelector(`#modal_badanie_${badanieId} .modal-body .badanie-title`).textContent;
-    const resultType = document.querySelector(`#modal_badanie_${badanieId} .modal-body .result-type`).textContent;
-    const badanieData = document.querySelector(`#modal_badanie_${badanieId} .modal-body .badanie-data`).textContent;
-    const notes = document.querySelector(`#modal_badanie_${badanieId} .modal-body .badanie-notatki`).textContent;
+function getCSRFToken() {
+  const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+  return cookieValue ? cookieValue.split('=')[1] : '';
+}
 
+function gen_Raport(modal, badanieId) {
+    const titleEl = modal.querySelector('.badanie-title');        //ściąga dane bezpośrednio z tego jednego modala, żeby nie generować z pustego
+    const resultTypeEl = modal.querySelector('.result-type');
+    const dataEl = modal.querySelector('.badanie-data');
+    
+
+    if (!titleEl || !resultTypeEl || !dataEl) {
+        console.error("Brakuje danych w badanieId: ", badanieId);
+        return;
+    }
+
+    const badanieTitle = titleEl.textContent.trim();    
+    const resultType = resultTypeEl.textContent.trim();
+    const badanieData = dataEl.textContent.trim();
+    
+
+    let notes = null;           //notatki mogą być puste
     let chartImage = null;          //na początek ustwione na puste 
     let badanieValue = null;
+    
 
-    const chartContainer = document.getElementById(`chart-container-${badanieId}`);
-    if (chartContainer && chartContainer.style.display !== 'none') {
-        const canvas = document.getElementById(`badanieChart_${badanieId}`);
-        chartImage = canvas.toDataURL(); // image as base64 string
+    const notesEl = modal.querySelector('.badanie-notatki');
+
+    if(notesEl){
+        notes = notesEl.textContent.trim();
     }
 
-    const valueContainer = document.getElementById(`value-container-${badanieId}`);
-    if (valueContainer && valueContainer.style.display !== 'none') {
-        const valueElement = document.getElementById(`value-text-${badanieId}`);
-        if (valueElement) {
-            badanieValue = valueElement.textContent || valueElement.innerText; //zależy co dostępne 
-        }
+    const chartContainer = modal.querySelector(`#chart-container-${badanieId}`);
+    const canvas = modal.querySelector(`#badanieChart_${badanieId}`);
+    if (chartContainer && chartContainer.style.display !== 'none' && canvas) {
+        chartImage = canvas.toDataURL();
     }
 
-    // Send data to the server via AJAX - Asynchroniczny JavaScript i XML, do przesyłania bez odświeżania str
-    fetch('generate_report', {
+    const valueContainer = modal.querySelector(`#value-container-${badanieId}`);
+    const valueElement = modal.querySelector(`#value-text-${badanieId}`);
+    if (valueContainer && valueContainer.style.display !== 'none' && valueElement) {
+        badanieValue = valueElement.textContent.trim();
+    }
+
+    console.log('Chart container:', chartContainer);
+    console.log('Canvas:', canvas);
+    console.log('Chart container style:', chartContainer ? chartContainer.style.display : 'no container');
+
+    // Send data to the server 
+    // AJAX - Asynchroniczny JavaScript i XML, do przesyłania bez odświeżania str
+
+    fetch('{% url "generate_report" %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()   //dla bezpieczestwa
+            'X-CSRFToken': getCSRFToken()   //dla bezpieczestwa: 
+                                            // Django require that certain requests — especially state-changing ones like POST, PUT, DELETE — include a secret token (CSRF token)
+                                                    // that proves the request is coming from your own site, not from a third party.
+                                                    // to samo co przy logout 
         },
         body: JSON.stringify({
             badanie_id: badanieId,
@@ -499,7 +553,112 @@ function gen_Raport(badanieId) {
         //create link to trigger the download
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `raport_${badanie_title}.pdf`;
+        link.download = `raport_${badanieTitle}.pdf`;
+        link.click();
+    })
+    .catch(error => {
+        console.error('Wystąpił błąd podczas tworzenia raportu: ', error);
+    });
+}
+</script>
+
+<!-- generowanie raportów WIZYTA: wysyłanie requesta -->
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+    const reportButtons_wizyta = document.querySelectorAll('.gen_raport_wizyta[data-id]');
+    //wybierz wszystkie buttons of this type 
+
+    reportButtons_wizyta.forEach(button => {
+        button.addEventListener('click', function () {
+            const modal = this.closest('.modal');    //assoc button with modal (typ modala ma znaczenie)
+            if (!modal) {
+                console.error("Modal not found for button");
+                return;
+            }
+
+            const wizytaId = this.getAttribute('data-id');
+            gen_Raport_wizyta(modal, wizytaId);     //przekaż id do gen_raport
+        });
+    });
+});
+
+function getCSRFToken() {
+  const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+  return cookieValue ? cookieValue.split('=')[1] : '';
+}
+
+function gen_Raport(modal, badanieId) {
+    const titleEl = modal.querySelector('.badanie-title');        //ściąga dane bezpośrednio z tego jednego modala, żeby nie generować z pustego
+    const resultTypeEl = modal.querySelector('.result-type');
+    const dataEl = modal.querySelector('.badanie-data');
+    
+
+    if (!titleEl || !resultTypeEl || !dataEl) {
+        console.error("Brakuje danych w badanieId: ", badanieId);
+        return;
+    }
+
+    const badanieTitle = titleEl.textContent.trim();    
+    const resultType = resultTypeEl.textContent.trim();
+    const badanieData = dataEl.textContent.trim();
+    
+
+    let notes = null;           //notatki mogą być puste
+    let chartImage = null;          //na początek ustwione na puste 
+    let badanieValue = null;
+    
+
+    const notesEl = modal.querySelector('.badanie-notatki');
+
+    if(notesEl){
+        notes = notesEl.textContent.trim();
+    }
+
+    const chartContainer = modal.querySelector(`#chart-container-${badanieId}`);
+    const canvas = modal.querySelector(`#badanieChart_${badanieId}`);
+    if (chartContainer && chartContainer.style.display !== 'none' && canvas) {
+        chartImage = canvas.toDataURL();
+    }
+
+    const valueContainer = modal.querySelector(`#value-container-${badanieId}`);
+    const valueElement = modal.querySelector(`#value-text-${badanieId}`);
+    if (valueContainer && valueContainer.style.display !== 'none' && valueElement) {
+        badanieValue = valueElement.textContent.trim();
+    }
+
+    console.log('Chart container:', chartContainer);
+    console.log('Canvas:', canvas);
+    console.log('Chart container style:', chartContainer ? chartContainer.style.display : 'no container');
+
+    // Send data to the server 
+    // AJAX - Asynchroniczny JavaScript i XML, do przesyłania bez odświeżania str
+
+    fetch('{% url "generate_report" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()   //dla bezpieczestwa: 
+                                            // Django require that certain requests — especially state-changing ones like POST, PUT, DELETE — include a secret token (CSRF token)
+                                                    // that proves the request is coming from your own site, not from a third party.
+                                                    // to samo co przy logout 
+        },
+        body: JSON.stringify({
+            badanie_id: badanieId,
+            badanie_title: badanieTitle,
+            result_type: resultType,
+            badanie_data: badanieData,
+            notes: notes,
+            chart_image: chartImage,
+            badanie_value: badanieValue
+        })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        //create link to trigger the download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `raport_${badanieTitle}.pdf`;
         link.click();
     })
     .catch(error => {

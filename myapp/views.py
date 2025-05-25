@@ -356,6 +356,8 @@ def delete_badanie(request, pk):
 ##generowanie raportów - badania 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+import base64
+from reportlab.lib.utils import ImageReader
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -388,10 +390,19 @@ def generate_report(request):
 
         # If the chart image is available
         if chart_image:
-            from reportlab.lib.utils import ImageReader
-            chart_image_data = BytesIO(chart_image.split(',')[1].encode())  # Convert base64 to image data
-            chart = ImageReader(chart_image_data)
-            p.drawImage(chart, 100, 500, width=400, height=300) 
+            try:
+                #decode formatu base64
+                header, base64_data = chart_image.split(',', 1)
+                image_data = base64.b64decode(base64_data)
+                image_io = BytesIO(image_data)
+
+                chart = ImageReader(image_io)
+                p.drawString(100, 680, f'Wyniki badania:')
+                p.drawImage(chart, 100, 400, width=400, height=250)
+
+
+            except Exception as e:
+                print("Chart image error:", e)  #sprawdzenie 
 
         p.showPage()
         p.save()
