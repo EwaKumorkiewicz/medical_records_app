@@ -62,7 +62,7 @@ function toggleForm(type) {
     <thead>
         <tr class = 'text-center'>
             <th class="table-primary">Data</th>
-            <th class="table-primary">Lekarz</th>
+            <th class="table-primary">Notatki</th>
             <th class="table-primary">Zobacz więcej</th>
             <th class = "table-primary">Edytuj</th>
             <th class="table-primary">Usuń</th>
@@ -72,7 +72,7 @@ function toggleForm(type) {
         {% for wizyta in page_obj_wizyta %}
         <tr class="text-center">
             <td>{{ wizyta.wizyta_data }}</td>
-            <td>{{ wizyta.doctor.username }}</td>
+            <td>{{ wizyta.notes|slice:":30" }}</td>
 
             
             <td class = "text-center"><button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal"
@@ -338,21 +338,21 @@ document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadz
           <h4 class="modal-title">Szczegóły wizyty</h4>
         </div>
         <div class="modal-body">
-          <p><span>Data wizyty: {{ wizyta.wizyta_data|date:"d-m-Y H:i" }}</span><br>
-            Lekarz: {{ wizyta.doctor.username }} <br>
+          <p>Data wizyty:<span class = "wizyta-data"> {{ wizyta.wizyta_data|date:"d-m-Y H:i" }}</span><br>
+            Lekarz: <span class = "wizyta-lekarz">{{ wizyta.doctor.username }} </span><br>
             {% if wizyta.photo %}
-                <img src="{{ wizyta.photo.url }}" alt="Zdjęcie z wizyty" class="modal-img" style='height: 100%; width: 100%; object-fit: contain'>
+                <img class = "photo" src="{{ wizyta.photo.url }}" alt="Zdjęcie z wizyty" class="modal-img" style='height: 100%; width: 100%; object-fit: contain'>
             {% endif %}
             <br>
             <hr>
-            Notatki:<br> {{wizyta.notes|linebreaksbr}} <br>
+            Notatki:<br><span class = "wizyta-notatki"> {{wizyta.notes|linebreaksbr}} </span><br>
             
         
         
         </p>
         </div>
         <div class="modal-footer">
-            <button type="button" class = "btn btn-primary">Generuj raport</button>
+            <button type="button" class = "btn btn-primary gen_raport_wizyta" data-id = "{{ wizyta.id }}">Generuj raport</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
           
         </div>
@@ -526,7 +526,7 @@ function gen_Raport(modal, badanieId) {
     console.log('Canvas:', canvas);
     console.log('Chart container style:', chartContainer ? chartContainer.style.display : 'no container');
 
-    // Send data to the server 
+    // wysłać dane na serwer
     // AJAX - Asynchroniczny JavaScript i XML, do przesyłania bez odświeżania str
 
     fetch('{% url "generate_report" %}', {
@@ -550,7 +550,7 @@ function gen_Raport(modal, badanieId) {
     })
     .then(response => response.blob())
     .then(blob => {
-        //create link to trigger the download
+        //link do pobrania 
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = `raport_${badanieTitle}.pdf`;
@@ -571,7 +571,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     reportButtons_wizyta.forEach(button => {
         button.addEventListener('click', function () {
-            const modal = this.closest('.modal');    //assoc button with modal (typ modala ma znaczenie)
+            const modal = this.closest('.modal');    //assoc button with modal
             if (!modal) {
                 console.error("Modal not found for button");
                 return;
@@ -588,53 +588,42 @@ function getCSRFToken() {
   return cookieValue ? cookieValue.split('=')[1] : '';
 }
 
-function gen_Raport(modal, badanieId) {
-    const titleEl = modal.querySelector('.badanie-title');        //ściąga dane bezpośrednio z tego jednego modala, żeby nie generować z pustego
-    const resultTypeEl = modal.querySelector('.result-type');
-    const dataEl = modal.querySelector('.badanie-data');
+function gen_Raport_wizyta(modal, wizytaId) {
+    const lekarzEl = modal.querySelector('.wizyta-lekarz');
+    const dataEl = modal.querySelector('.wizyta-data');
     
 
-    if (!titleEl || !resultTypeEl || !dataEl) {
-        console.error("Brakuje danych w badanieId: ", badanieId);
+    if (!lekarzEl || !dataEl) {
+        console.error("Brakuje danych w wizyta: ", wizytaId);
         return;
     }
 
-    const badanieTitle = titleEl.textContent.trim();    
-    const resultType = resultTypeEl.textContent.trim();
-    const badanieData = dataEl.textContent.trim();
+    const wizytaData = dataEl.textContent.trim();
+    const wizytaLekarz = lekarzEl.textContent.trim();
     
 
     let notes = null;           //notatki mogą być puste
-    let chartImage = null;          //na początek ustwione na puste 
-    let badanieValue = null;
-    
+    let image = null;          //obrazek może być puste początek ustwione na puste 
 
-    const notesEl = modal.querySelector('.badanie-notatki');
+
+    const notesEl = modal.querySelector('.wizyta-notatki');
 
     if(notesEl){
         notes = notesEl.textContent.trim();
     }
 
-    const chartContainer = modal.querySelector(`#chart-container-${badanieId}`);
-    const canvas = modal.querySelector(`#badanieChart_${badanieId}`);
-    if (chartContainer && chartContainer.style.display !== 'none' && canvas) {
-        chartImage = canvas.toDataURL();
+    const imageEl = modal.querySelector('.photo');
+    if(imageEl){
+        image = imageEl.getAttribute('src');
+        console.log(image)
     }
 
-    const valueContainer = modal.querySelector(`#value-container-${badanieId}`);
-    const valueElement = modal.querySelector(`#value-text-${badanieId}`);
-    if (valueContainer && valueContainer.style.display !== 'none' && valueElement) {
-        badanieValue = valueElement.textContent.trim();
-    }
 
-    console.log('Chart container:', chartContainer);
-    console.log('Canvas:', canvas);
-    console.log('Chart container style:', chartContainer ? chartContainer.style.display : 'no container');
 
-    // Send data to the server 
+    // dane na server
     // AJAX - Asynchroniczny JavaScript i XML, do przesyłania bez odświeżania str
 
-    fetch('{% url "generate_report" %}', {
+    fetch('{% url "generate_report_wiz" %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -644,21 +633,20 @@ function gen_Raport(modal, badanieId) {
                                                     // to samo co przy logout 
         },
         body: JSON.stringify({
-            badanie_id: badanieId,
-            badanie_title: badanieTitle,
-            result_type: resultType,
-            badanie_data: badanieData,
+            wizyta_id: wizytaId,
+            wizyta_data: wizytaData,
+            lekarz: wizytaLekarz,
             notes: notes,
-            chart_image: chartImage,
-            badanie_value: badanieValue
+            image: image,
+
         })
     })
     .then(response => response.blob())
     .then(blob => {
-        //create link to trigger the download
+        //link do pobrania 
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `raport_${badanieTitle}.pdf`;
+        link.download = `raport_${wizytaData}.pdf`;
         link.click();
     })
     .catch(error => {

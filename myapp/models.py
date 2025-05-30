@@ -57,12 +57,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150)
     role = models.CharField(max_length = 10, choices = ROLE_CHOICES)
     date_of_birth = models.DateField()
-    pesel = models.CharField(max_length = 3, validators = [RegexValidator(r'^\d{3}$', message='Wprowadź poprawny numer PESEL (3-cyfrowy).')])
+    pesel = models.CharField(max_length = 11, validators = [RegexValidator(r'^\d{11}$', message='Wprowadź poprawny numer PESEL (11-cyfrowy).')])
 
     #pola z BaseUser które trzeba dodać ręcznie 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    date_joined = models.DateTimeField(auto_now_add=True)
+    #date_joined = models.DateTimeField(auto_now_add=True, editable = True)
 
     #patients link to one doctor (null at first)
     assigned_doctor = models.ForeignKey(

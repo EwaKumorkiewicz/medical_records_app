@@ -124,6 +124,13 @@ def doctor_home_view(request):
     search_results = []
 
     if query or query_1:
+        if query and query_1:
+            search_results = CustomUser.objects.filter(
+                role='patient',
+                assigned_doctor__isnull=True
+            ).filter(
+                Q(username__icontains=query) | Q(email__icontains=query) | Q(pesel__icontains=query_1)
+            )
         if query:
             #ci bez lekarza 
             search_results = CustomUser.objects.filter(
@@ -175,21 +182,28 @@ def patient_home_view(request):
 
     query = request.GET.get('q')
     query_1 = request.GET.get('q_1')
+
     search_results = []
 
-    if query or query_1:
-        if query:
-            search_results = Badania.objects.filter(
-                patient = patient
-            ).filter(                
-                Q(badanie_title__icontains=query) | Q(result_type__icontains = query )
-            )
-        else:
-            search_results = Badania.objects.filter(
-                patient = patient
-            ).filter(                
-                Q(badanie_data__icontains = query_1)
-            )
+    if query and query_1:
+        search_results = Badania.objects.filter(
+            patient = patient
+        ).filter(                                
+            Q(badanie_title__icontains=query) | Q(result_type__icontains = query ) | Q(badanie_data__icontains = query_1)
+        ).order_by('-badanie_data')
+    if query:
+        search_results = Badania.objects.filter(
+            patient = patient
+        ).filter(                                
+            Q(badanie_title__icontains=query) | Q(result_type__icontains = query )
+        ).order_by('-badanie_data')
+    elif query_1:
+        search_results = Badania.objects.filter(
+            patient = patient
+        ).filter(                                
+            Q(badanie_data__icontains = query_1)
+        ).order_by('-badanie_data')
+
 
 
     
@@ -361,6 +375,22 @@ from reportlab.lib.utils import ImageReader
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image   #do formatowania pdf
+
+import os 
+from django.conf import settings
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+from xml.sax.saxutils import escape
+
+
+from reportlab.lib.styles import ParagraphStyle
+custom_style = ParagraphStyle(
+    name='CambayStyle',
+    fontName='Cambay',  
+    fontSize=12,
+    leading=14,        
+)
 
 
 def generate_report(request):
@@ -374,42 +404,60 @@ def generate_report(request):
         chart_image = data.get('chart_image')
         badanie_value = data.get('badanie_value')
 
-        #generate PDF Report
+        #Buffer pod PDF
         buffer = BytesIO()
-        p = canvas.Canvas(buffer, pagesize=A4)
 
-        # Draw basic text data
-        p.drawString(100, 750, f'Badanie: {badanie_title}')   #pozycja tekstu współrzędne 
-        p.drawString(100, 735, f'Typ badania: {result_type}')
-        p.drawString(100, 720, f'Data badania: {badanie_data}')
-        p.drawString(100, 705, f'Notatki: {notes}')
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        content = []
 
+        #Zachowaj formatowanie 
+        notes_html = escape(notes).replace('\n', '<br>')
+
+        #ustal font wspierający znaki polskie:
+        font_path = os.path.join(settings.BASE_DIR, 'static', 'Cambay', 'Cambay-Regular.ttf')
+        try:
+            pdfmetrics.registerFont(TTFont('Cambay', str(font_path)))
+            doc.setFont("Cambay", 12)
+        except Exception as e:
+            print(f"Font nie jest zaladowany: {e}")
+
+        notes_html = escape(notes).replace('\n', '<br/>')
+        
+        content.append(Paragraph(f"<b>Badanie: </b> {escape(badanie_title)}", custom_style))
+        content.append(Paragraph(f"<b>Typ badania: </b> {escape(result_type)}", custom_style))
+        content.append(Paragraph(f"<b>Data badania: </b> {escape(badanie_data)}", custom_style))
+        content.append(Spacer(1, 12))
+        content.append(Paragraph("<b>Notatki: </b>", custom_style))
+        content.append(Paragraph(notes_html, custom_style))
+        content.append(Spacer(1, 12))
 
         if badanie_value:
-            p.drawString(100, 690, f'Wynik badania: {badanie_value}')
+            content.append(Paragraph(f"<b>Wynik badania: </b> {escape(badanie_value)}", custom_style))
+            content.append(Spacer(1, 12))
 
-        # If the chart image is available
+        # Handle chart image if present
         if chart_image:
             try:
-                #decode formatu base64
                 header, base64_data = chart_image.split(',', 1)
                 image_data = base64.b64decode(base64_data)
                 image_io = BytesIO(image_data)
 
-                chart = ImageReader(image_io)
-                p.drawString(100, 680, f'Wyniki badania:')
-                p.drawImage(chart, 100, 400, width=400, height=250)
-
+                # You can use ImageReader or Image directly
+                img = Image(image_io, width=400, height=250)
+                content.append(Paragraph("<b>Wyniki badania: </b>", custom_style))
+                content.append(Spacer(1, 6))
+                content.append(img)
 
             except Exception as e:
-                print("Chart image error:", e)  #sprawdzenie 
+                print("Chart image error:", e)
 
-        p.showPage()
-        p.save()
+        # Build PDF
+        doc.build(content)
 
+        # Return response
         buffer.seek(0)
         response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="raport_{data["badanie_title"]}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="raport_{badanie_title}.pdf"'
         return response
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
@@ -431,3 +479,61 @@ def generate_csv(request):
         writer.writerow([pacjent.username, pacjent.pesel, pacjent.date_of_birth])
 
     return response
+
+
+
+
+def generate_report_wiz(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+    
+        lekarz = data['lekarz']
+        wizyta_data = data['wizyta_data']
+        notes = data['notes']
+        image_path = data.get('image')
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+
+        font_path = os.path.join(settings.BASE_DIR, 'static', 'Cambay', 'Cambay-Regular.ttf')
+        try:
+            pdfmetrics.registerFont(TTFont('Cambay', str(font_path)))
+        except Exception as e:
+            print(f"Font nie jest zaladowany: {e}")
+
+        custom_style = ParagraphStyle(
+            name='CambayStyle',
+            fontName='Cambay',
+            fontSize=12,
+            leading=15,
+        )
+
+        notes_html = escape(notes).replace("\n", "<br>")
+
+        content = []
+
+        content.append(Paragraph(f"<b>Data wizyty:</b> {escape(wizyta_data)}", custom_style))
+        content.append(Paragraph(f"<b>Lekarz:</b> {escape(lekarz)}", custom_style))
+        content.append(Paragraph("<b>Notatki:</b>", custom_style))
+        content.append(Paragraph(notes_html, custom_style))
+        content.append(Spacer(1, 12))
+
+        if image_path:
+            abs_path = os.path.join(settings.MEDIA_ROOT, image_path.replace('/media/', ''))
+            try:
+                with open(abs_path, 'rb') as f:
+                    content.append(Paragraph("<b>Obraz:</b>", custom_style))
+                    content.append(Spacer(1, 6))
+                    content.append(Image(f, width=400, height=250))
+            except Exception as e:
+                print('Image error:', e)
+
+        doc.build(content)
+
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="raport_{wizyta_data}.pdf"'
+        return response
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+

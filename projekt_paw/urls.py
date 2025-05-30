@@ -21,9 +21,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('', views.base_redirect),
     path('admin/', admin.site.urls),
     path('mypage1/', views.mypage1),
     path('myapp/', include('myapp.urls')),
+
 ] 
 
 if settings.DEBUG:

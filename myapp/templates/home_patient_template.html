@@ -134,10 +134,9 @@
 
 
 
-<!-- Search Results -->
+<!-- Search Results 
 {% if search_results %}
-    <h2>Wyniki zapytania: </h2>
-    <table class="table table-hover">
+    <table border="1" cellspacing="0" cellpadding="8" class = 'table table-hover' >
         <thead>
             <tr class = 'text-center'>
                 <th>Tytuł badania</th>
@@ -164,40 +163,37 @@
   <p class="text-muted">Brak wyników dla zapytania</p>
 {% endif %}
 
-
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {  //kontrola wprowadzonych wartości w formularzach
-    const nameInput = document.getElementById("q");
-    const dateInput = document.getElementById("q_1");
-
-    function toggleInputs() {
-        if (nameInput.value) {
-            dateInput.disabled = true;
-        } else {
-            dateInput.disabled = false;
-        }
-
-        if (dateInput.value) {
-            nameInput.disabled = true;
-        } else {
-            nameInput.disabled = false;
-        }
-    }
-
-    nameInput.addEventListener("input", toggleInputs);
-    dateInput.addEventListener("input", toggleInputs);
-
-    toggleInputs();  // initial check
-});
-</script>
-
-
-
+-->
 <br>
 
 <h2><span class = 'material-symbols-outlined'>cardiology</span>Moje Wyniki</h2>
-{% if badania %}
+{% if search_results %}
+    <table border="1" cellspacing="0" cellpadding="8" class = 'table table-hover' >
+            <thead>
+                <tr class = 'text-center'>
+                    <th class = 'table-primary'>Tytuł badania</th>
+                    <th class = 'table-primary'>Data i godzina badania </th>
+                    <th class = 'table-primary'>Typ badania</th>
+                    <th class = 'table-primary'>Zobacz więcej</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bad in search_results %}
+                    <tr class = 'text-center'>
+                        <td>{{ bad.badanie_title }}</td>
+                        <td>{{ bad.badanie_data|date:"d-m-Y H:i"  }}</td>
+                        <td>{{ bad.result_type }} </td>
+                        <td class = "d-flex justify-content-center align-items-center"><button class="btn btn-primary btn-sm show-chart d-flex align-items-center gap-1" data-id="{{ bad.id }}" data-bs-toggle="modal" data-bs-target="#modal_badanie_{{ bad.id }}">
+                            <span class="material-symbols-outlined">
+                                info
+                            </span>Szczegóły</button></td>
+                    </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+{% elif request.GET.q or request.GET.q_1 %}
+    <p class="text-muted">Brak wyników dla zapytania</p>
+{% elif badania %}
     <table border="1" cellspacing="0" cellpadding="8" class = 'table table-hover' >
     <thead>
         <tr class = 'text-center'>
@@ -323,7 +319,7 @@ document.querySelectorAll('.show-chart').forEach(button => {
                     return;
                 }
 
-                // Destroy existing chart if present
+                // usuń jeśli jest poprzedni
                 if (window.badanieChart) {
                     window.badanieChart.destroy();
                 }
