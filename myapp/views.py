@@ -53,7 +53,6 @@ class MyClass2View(View):
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 
-from django.shortcuts import render, redirect
 from .forms import CustomUserCreationForm
 
 def signup_view(request):

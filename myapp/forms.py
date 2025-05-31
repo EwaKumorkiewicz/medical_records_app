@@ -28,7 +28,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     pesel = forms.CharField(
         widget=forms.TextInput(attrs= {'class': 'form-control'}),
-        label = "Numer PESEL/id (3-cyfrowy)")
+        label = "Numer PESEL/id (11-cyfrowy)")
 
     password1 = forms.CharField(
         label="Hasło",

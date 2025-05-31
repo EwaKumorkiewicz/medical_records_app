@@ -2,3 +2,11 @@
     font-family: "CustomFont";
     src: url("../static/Cambay/Cambay-Regular.ttf");
 }
+
+/*
+body {
+    font-family: "CustomFont", serif;
+    font-size: 11;
+    line-height: 100%;
+}
+*/

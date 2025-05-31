@@ -17,7 +17,16 @@
     <label>PESEL: </label>
     <input type="text" name="q_1" id = 'q_1' placeholder="Lub PESEL/id" value="{{ request.GET.q_1 }}" class="form-control" />
     <button type="submit" class="btn btn-primary mt-2">Szukaj</button>
+    <button type="reset" class="btn btn-secondary mt-2" onclick="resetForm()">Wyczyść</button>
 </form>
+
+<script>
+    function resetForm() {
+        const form = document.querySelector('form');
+        form.reset();
+        window.location.href = window.location.pathname;
+    }
+</script>
 
 <!-- Search Results -->
 {% if search_results %}
