@@ -50,7 +50,7 @@ class MyClass2View(View):
 
 #tutaj dodajemy widoki dla stron logowania i rejestracji:
 
-from django.contrib.auth.forms import UserCreationForm
+#from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 
 from .forms import CustomUserCreationForm
@@ -128,7 +128,7 @@ def doctor_home_view(request):
                 role='patient',
                 assigned_doctor__isnull=True
             ).filter(
-                Q(username__icontains=query) | Q(email__icontains=query) | Q(pesel__icontains=query_1)
+                (Q(username__icontains=query) | Q(email__icontains=query)) & Q(pesel__icontains=query_1)
             )
         if query:
             #ci bez lekarza 
@@ -157,6 +157,7 @@ def doctor_home_view(request):
             patient.save()
 
     #wyświetlanie pacjentów przypisanych do danego id_lekarza
+
     assigned_patients = CustomUser.objects.filter(assigned_doctor=request.user).order_by('username')
 
     return render(request, 'home_doctor_template.html', {
@@ -168,6 +169,8 @@ def doctor_home_view(request):
 from .models import Wizyty
 from .models import Badania 
 from django.utils import timezone
+
+from datetime import datetime, time
 #pacjent_home:
 @login_required
 def patient_home_view(request):
@@ -182,28 +185,49 @@ def patient_home_view(request):
     query = request.GET.get('q')
     query_1 = request.GET.get('q_1')
 
+    print("query:", query)
+    print("query_1:", query_1)
+    
+
     search_results = []
 
-    if query and query_1:
+    parsed_date = None  
+
+    if query_1:
+        for fmt in ("%d-%m-%Y %H:%M", "%d-%m-%Y", "%Y-%m-%d"):   # na wszelki wypadek sprawdzić różne opcje
+            try:
+                parsed_date = datetime.strptime(query_1, fmt).date()
+                break
+            except ValueError:
+                continue
+    
+    print("parsed_date:", parsed_date)
+
+    if query and parsed_date:
+        start_dt = datetime.combine(parsed_date, time.min)
+        end_dt = datetime.combine(parsed_date, time.max)
         search_results = Badania.objects.filter(
-            patient = patient
-        ).filter(                                
-            Q(badanie_title__icontains=query) | Q(result_type__icontains = query ) | Q(badanie_data__icontains = query_1)
+            patient=patient
+        ).filter(
+            (Q(badanie_title__icontains=query) | Q(result_type__icontains=query)) &
+            Q(badanie_data__range=(start_dt, end_dt))
         ).order_by('-badanie_data')
-    if query:
+
+    elif query:
         search_results = Badania.objects.filter(
             patient = patient
         ).filter(                                
             Q(badanie_title__icontains=query) | Q(result_type__icontains = query )
         ).order_by('-badanie_data')
-    elif query_1:
+
+    elif parsed_date:
+        start_dt = datetime.combine(parsed_date, time.min)
+        end_dt = datetime.combine(parsed_date, time.max)
         search_results = Badania.objects.filter(
-            patient = patient
-        ).filter(                                
-            Q(badanie_data__icontains = query_1)
+            patient=patient
+        ).filter(
+            Q(badanie_data__range=(start_dt, end_dt))
         ).order_by('-badanie_data')
-
-
 
     
     return render(request, 'home_patient_template.html', {'wizyty': wizyty, 'badania': badania, 'now': now, 'search_results': search_results})
@@ -298,7 +322,6 @@ def chart_data(request, badanie_id):
         if badanie.badanie_file:
             file_path = badanie.badanie_file.path  
             
-            # Read numbers from the text file (float i int)
             with open(file_path, 'r') as file:
                 data = []
                 for line in file:
@@ -434,14 +457,12 @@ def generate_report(request):
             content.append(Paragraph(f"<b>Wynik badania: </b> {escape(badanie_value)}", custom_style))
             content.append(Spacer(1, 12))
 
-        # Handle chart image if present
         if chart_image:
             try:
                 header, base64_data = chart_image.split(',', 1)
                 image_data = base64.b64decode(base64_data)
                 image_io = BytesIO(image_data)
 
-                # You can use ImageReader or Image directly
                 img = Image(image_io, width=400, height=250)
                 content.append(Paragraph("<b>Wyniki badania: </b>", custom_style))
                 content.append(Spacer(1, 6))
@@ -450,10 +471,10 @@ def generate_report(request):
             except Exception as e:
                 print("Chart image error:", e)
 
-        # Build PDF
+        
         doc.build(content)
 
-        # Return response
+        
         buffer.seek(0)
         response = HttpResponse(buffer, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="raport_{badanie_title}.pdf"'
@@ -535,4 +556,7 @@ def generate_report_wiz(request):
         return response
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+
 

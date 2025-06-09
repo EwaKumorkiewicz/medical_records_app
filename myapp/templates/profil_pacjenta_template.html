@@ -61,7 +61,7 @@ function toggleForm(type) {
     <table border="1" cellspacing="0" cellpadding="8" class = "table table-hover" id="myTable1">
     <thead>
         <tr class = 'text-center'>
-            <th onclick="sortTable1(1)" class="table-primary" style = "display: flex; align-items: center; justify-content: center; cursor: pointer;">Data wizyty<span class = "material-symbols-outlined">swap_vert</span></th>
+            <th onclick="sortTable1(0)" class="table-primary" style = "display: flex; align-items: center; justify-content: center; cursor: pointer;">Data wizyty<span class = "material-symbols-outlined">swap_vert</span></th>
             <th class="table-primary">Notatki</th>
             <th class="table-primary">Zobacz więcej</th>
             <th class = "table-primary">Edytuj</th>
@@ -71,8 +71,8 @@ function toggleForm(type) {
     <tbody>
         {% for wizyta in page_obj_wizyta %}
         <tr class="text-center">
-            <td>{{ wizyta.wizyta_data }}</td>
-            <td>{{ wizyta.notes|slice:":30" }}</td>
+            <td>{{ wizyta.wizyta_data|date:"d-m-Y H:i" }}</td>
+            <td>{{ wizyta.notes|slice:":30" }}...</td>
 
             
             <td class = "text-center"><button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal"
@@ -219,7 +219,7 @@ function toggleForm(type) {
         {% for badanie in page_obj_badanie %}
         <tr class="text-center align-middle align-items-center">
             <td>{{ badanie.badanie_title }}</td>
-            <td>{{ badanie.badanie_data }}</td>
+            <td>{{ badanie.badanie_data|date:"d-m-Y H:i" }}</td>
             <td>{{ badanie.result_type }}</td>
             <td class = "text-center"><button class="btn btn-primary btn-sm show-chart d-inline-flex align-items-center gap-1" data-id="{{ badanie.id }}" data-bs-toggle="modal" data-bs-target="#modal_badanie_{{ badanie.id }}">
                         <span class="material-symbols-outlined">
@@ -236,54 +236,65 @@ function toggleForm(type) {
 </table>
 
 <script>
+function parseDateTime(datetimeStr) {
+  if (!datetimeStr) return new Date(0);
+
+  var parts = datetimeStr.trim().split(' ');
+  if(parts.length < 2) return new Date(0);
+
+  var dateParts = parts[0].split('-');
+  var timeParts = parts[1].split(':');
+
+  if(dateParts.length !== 3 || timeParts.length !== 2) return new Date(0);
+
+  return new Date(
+    parseInt(dateParts[2], 10),
+    parseInt(dateParts[1], 10) - 1,
+    parseInt(dateParts[0], 10),
+    parseInt(timeParts[0], 10),
+    parseInt(timeParts[1], 10)
+  );
+}
+
 function sortTable1(n) {
   var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-    table = document.getElementById("myTable1");
+  table = document.getElementById("myTable1");
 
   switching = true;
-  // Set the sorting direction to ascending:
   dir = "asc";
-  /* Make a loop that will continue until
-  no switching has been done: */
+
   while (switching) {
-    // Start by saying: no switching is done:
     switching = false;
     rows = table.rows;
-    /* Loop through all table rows (except the
-    first, which contains table headers): */
     for (i = 1; i < (rows.length - 1); i++) {
-      // Start by saying there should be no switching:
       shouldSwitch = false;
-      /* Get the two elements you want to compare,
-      one from current row and one from the next: */
       x = rows[i].getElementsByTagName("TD")[n];
       y = rows[i + 1].getElementsByTagName("TD")[n];
-      /* Check if the two rows should switch place,
-      based on the direction, asc or desc: */
+
+      var dateX = parseDateTime(x.innerHTML);
+      var dateY = parseDateTime(y.innerHTML);
+
+      console.log("Comparing:", x.innerHTML, "=>", dateX, "|", y.innerHTML, "=>", dateY);
+      console.log("dateX valid?", !isNaN(dateX));
+      console.log("dateY valid?", !isNaN(dateY));
+
       if (dir == "asc") {
-        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-          // If so, mark as a switch and break the loop:
+        if (dateX > dateY) {
           shouldSwitch = true;
           break;
         }
       } else if (dir == "desc") {
-        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-          // If so, mark as a switch and break the loop:
+        if (dateX < dateY) {
           shouldSwitch = true;
           break;
         }
       }
     }
     if (shouldSwitch) {
-      /* If a switch has been marked, make the switch
-      and mark that a switch has been done: */
       rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
       switching = true;
-      // Each time a switch is done, increase this count by 1:
-      switchcount ++;
+      switchcount++;
     } else {
-      /* If no switching has been done AND the direction is "asc",
-      set the direction to "desc" and run the while loop again. */
       if (switchcount == 0 && dir == "asc") {
         dir = "desc";
         switching = true;
@@ -292,6 +303,7 @@ function sortTable1(n) {
   }
 }
 
+
 function sortTable2(n) {
   var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
     table = document.getElementById("myTable2");
@@ -299,9 +311,10 @@ function sortTable2(n) {
   switching = true;
   dir = "asc";
   while (switching) {
-    // Start by saying: no switching is done:
+    // zaczyna od zera - false - brak switching 
     switching = false;
     rows = table.rows;
+    if (n == 0) {
     for (i = 1; i < (rows.length - 1); i++) {
       shouldSwitch = false;
       x = rows[i].getElementsByTagName("TD")[n];
@@ -317,6 +330,32 @@ function sortTable2(n) {
           break;
         }
       }
+    }
+    } else {
+        for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+
+            var dateX = parseDateTime(x.innerHTML);
+            var dateY = parseDateTime(y.innerHTML);
+
+            console.log("Comparing:", x.innerHTML, "=>", dateX, "|", y.innerHTML, "=>", dateY);
+            console.log("dateX valid?", !isNaN(dateX));
+            console.log("dateY valid?", !isNaN(dateY));
+
+            if (dir == "asc") {
+                if (dateX > dateY) {
+                shouldSwitch = true;
+                break;
+                }
+            } else if (dir == "desc") {
+                if (dateX < dateY) {
+                shouldSwitch = true;
+                break;
+                }
+            }
+        }
     }
     if (shouldSwitch) {
       rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
@@ -504,7 +543,7 @@ document.querySelectorAll('.show-chart').forEach(button => {
                         const {ctx} = chart;
                         ctx.save();
                         ctx.globalCompositeOperation = 'destination-over';
-                        ctx.fillStyle = options.color || '#99ffff';
+                        ctx.fillStyle = options.color || '#e6f2f0';
                         ctx.fillRect(0, 0, chart.width, chart.height);
                         ctx.restore();
                     }
